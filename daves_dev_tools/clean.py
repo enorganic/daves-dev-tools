@@ -2,7 +2,7 @@
 """
 This module cleans up files which are ignored by git
 """
-
+import argparse
 import functools
 import os
 import shutil
@@ -80,14 +80,16 @@ def get_ignored_files(
         root_directory,
         exclude_directories
     )
+    path_prefix: str = f'{root_directory.rstrip("/")}/'
+    path_prefix_length: int = len(path_prefix)
     for path in _run(
         f"git ls-files -o '{root_directory}'"
     ).split("\n"):
         path = os.path.abspath(f'./{path}')
         if not _is_excluded(path, exclude_directories):
             directory_name = ""
-            if "/" in path:
-                directory_name = path.split("/")[0]
+            if "/" in path[path_prefix_length:]:
+                directory_name = path[path_prefix_length:].split("/")[0]
             if directory_name not in directories_files:
                 directories_files[directory_name] = set()
             directories_files[directory_name].add(path)
@@ -166,7 +168,7 @@ def delete_ignored(
         os.remove(path)
 
 
-def clean(
+def main(
     root_directory: str = '.',
     exclude_directories: FrozenSet[str] = EXCLUDE_DIRECTORIES,
 ) -> None:
@@ -186,12 +188,35 @@ def clean(
     )
 
 
-clean.__doc__ = clean.__doc__.format(  # type: ignore
+main.__doc__ = main.__doc__.format(  # type: ignore
     EXCLUDE_DIRECTORIES=EXCLUDE_DIRECTORIES
 )
 
 
 if __name__ == "__main__":
-    shutil.rmtree = print
-    os.remove = print
-    clean('../')
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description='Parse command-line arguments for a "clean" operation'
+    )
+    parser.add_argument(
+        "--exclude",
+        "-e",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            'A path list of sub-directories to exclude (separated by ":" or '
+            '";", depending on the operating system).'
+        ),
+    )
+    parser.add_argument(
+        "root", help='The root directory path for the project.'
+    )
+    arguments: argparse.Namespace = parser.parse_args()
+    main(
+        root_directory=arguments.root,
+        exclude_directories=(
+            frozenset(os.path.split(arguments.exclude))
+            if arguments.exclude else
+            EXCLUDE_DIRECTORIES
+        )
+    )
