@@ -194,7 +194,6 @@ main.__doc__ = main.__doc__.format(  # type: ignore
 
 
 if __name__ == "__main__":
-    print(sys.argv)
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description='Parse command-line arguments for a "clean" operation'
     )

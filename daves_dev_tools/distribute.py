@@ -17,7 +17,6 @@ def _setup(root: str) -> None:
 
 def _dist(root: str) -> None:
     argv: List[str] = sys.argv
-    print(argv)
     current_directory: str = os.path.curdir
     os.chdir(root)
     try:
