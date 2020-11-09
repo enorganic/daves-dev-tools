@@ -1,4 +1,3 @@
-# !/usr/bin/env python3
 """
 This module cleans up files which are ignored by git
 """
@@ -6,6 +5,7 @@ import argparse
 import functools
 import os
 import shutil
+import sys
 from itertools import chain
 from subprocess import getstatusoutput
 from typing import (
@@ -194,6 +194,7 @@ main.__doc__ = main.__doc__.format(  # type: ignore
 
 
 if __name__ == "__main__":
+    print(sys.argv)
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description='Parse command-line arguments for a "clean" operation'
     )
@@ -209,7 +210,9 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
-        "root", help='The root directory path for the project.'
+        "root",
+        default=".",
+        help='The root directory path for the project.'
     )
     arguments: argparse.Namespace = parser.parse_args()
     main(

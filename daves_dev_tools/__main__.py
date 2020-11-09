@@ -18,10 +18,12 @@ def main(operation: str) -> None:
     - operation (str): The name of a sub-module to run as "__main__".
     """
     # Verify that a sub-module corresponding to the operation exists
-    importlib.import_module(f'.{operation}', _PACKAGE_NAME)
+    # importlib.import_module(f'.{operation}', _PACKAGE_NAME)
     sys.argv.remove(operation)
+    module_name: str = f'{_PACKAGE_NAME}.{operation}'
     runpy.run_module(
-        f'{_PACKAGE_NAME}.{operation}', run_name='__main__'
+        module_name,
+        run_name='__main__'
     )
 
 
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "operation",
-        help='The name of a tool/operation (clean, deploy, etc.)?'
+        help='The name of a tool/operation (clean, distribute, etc.)?'
     )
     arguments: argparse.Namespace = parser.parse_known_args()[0]
     main(arguments.operation)

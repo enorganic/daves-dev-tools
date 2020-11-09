@@ -42,7 +42,9 @@ setup(
     python_requires="~=3.6",
     packages=["daves_dev_tools"],
     package_data={"daves_dev_tools": ["py.typed"]},
-    install_requires=[],
+    install_requires=[
+        "twine"
+    ],
     extras_require={
         "dev": [
             "black~=19.10b0",
