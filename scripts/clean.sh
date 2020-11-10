@@ -1,1 +1,1 @@
-python3 -m daves_dev_tools clean "$(dirname $0)/../"
+daves-dev-tools clean "$(dirname $0)/../"
