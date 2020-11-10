@@ -52,7 +52,7 @@ def _setup(root: str) -> FrozenSet[str]:
     current_directory: str = os.path.curdir
     os.chdir(root)
     abs_setup: str = os.path.join(root, 'setup.py')
-    setup_args: List[str] = ['sdist', 'bdist', 'bdist_wheel']
+    setup_args: List[str] = ['sdist', 'bdist_wheel']
     print(f'{sys.executable} {abs_setup} {" ".join(setup_args)}')
     try:
         run_setup(abs_setup, setup_args)
