@@ -5,7 +5,6 @@ import argparse
 import functools
 import os
 import shutil
-import sys
 from itertools import chain
 from subprocess import getstatusoutput
 from typing import (

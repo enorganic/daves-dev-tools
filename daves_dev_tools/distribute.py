@@ -5,10 +5,11 @@ import os
 import runpy
 import sys
 from distutils.core import run_setup
+from itertools import chain
 from time import time
 from types import ModuleType
 from typing import (
-    Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple, Union
+    Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Tuple, Union
 )
 
 lru_cache: Callable[..., Any] = functools.lru_cache
@@ -46,7 +47,7 @@ def _setup(root: str) -> FrozenSet[str]:
     current_directory: str = os.path.curdir
     os.chdir(root)
     try:
-        run_setup('setup.py', ['sdist', 'bdist_wheel'])
+        run_setup(os.path.join(root, 'setup.py'), ['sdist', 'bdist_wheel'])
     finally:
         os.chdir(current_directory)
     return _list_dist(root, modified_at_or_after=start_time)
@@ -100,16 +101,15 @@ def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
 
 def _dist(root: str, distributions: FrozenSet[str]) -> None:
     argv: List[str] = sys.argv
-    twine_argv: List[str] = (
-        [None, 'upload'] + sys.argv[1:] + (
-            list(sorted(distributions))
-            if distributions else
-            [f'dist/*']
-        )
-    )
+    twine_argv: List[str] = list(chain(
+        sys.argv[:1],
+        ['upload'],
+        sys.argv[1:],
+        sorted(distributions)
+    ))
     current_directory: str = os.path.curdir
     os.chdir(root)
-    print(' '.join(['twine'] + twine_argv[1:]))
+    print(' '.join(['twine'] + twine_argv[1:]))  # type: ignore
     try:
         sys.argv = twine_argv
         runpy.run_module('twine', run_name='__main__')
@@ -122,7 +122,7 @@ def _cleanup(root: str) -> None:
     current_directory: str = os.path.curdir
     os.chdir(root)
     try:
-        run_setup('setup.py', ['clean', '--all'])
+        run_setup(os.path.join(root, 'setup.py'), ['clean', '--all'])
     finally:
         os.chdir(current_directory)
 
@@ -137,7 +137,9 @@ def _argv_remove(argv: List[str], key: str) -> int:
     return index
 
 
-def _argv_pop(argv: List[str], key: str, default: Optional[str] = None) -> str:
+def _argv_pop(
+    argv: List[str], key: str, default: Optional[str] = None
+) -> Optional[str]:
     key_index: int
     value: Optional[str] = default
     # Ensure we are looking for a keyword argument
@@ -193,4 +195,3 @@ if __name__ == '__main__':
     )
     arguments: argparse.Namespace = parser.parse_known_args()[0]
     main(arguments.root)
-

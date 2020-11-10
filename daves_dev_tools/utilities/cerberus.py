@@ -1,21 +1,20 @@
 import logging
 import sys
-from _warnings import warn
+from warnings import warn
 from collections import OrderedDict
 from traceback import format_exception
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
+
+import boto3  # type: ignore
+from botocore.exceptions import (  # type: ignore
+    ClientError, NoCredentialsError,
+)
+from cerberus import CerberusClientException  # type: ignore
+from cerberus.client import CerberusClient  # type: ignore
 
 __all__: List[str] = [
     "get_cerberus_secrets",
 ]
-
-import boto3  # type: ignore
-from botocore.exceptions import (  # type: ignore
-    ClientError,
-    NoCredentialsError,
-)
-from cerberus.client import CerberusClient  # type: ignore
-from cerberus import CerberusClientException  # type: ignore
 
 
 def get_cerberus_secrets(

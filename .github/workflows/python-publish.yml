@@ -1,13 +1,15 @@
-# This workflows will upload a Python Package using Twine when a release is
-# created. For more information see:
-# https://help.github.com/en/actions/language-and-framework-guides/
-# using-python-with-github-actions#publishing-to-package-registries
-
-name: Upload Python Package
+name: Test and Distribute
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   release:
-    types: [created]
+    types:
+      - created
 
 jobs:
   deploy:
@@ -25,6 +27,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
         pip install -e '.[all]'
+    - name: Run unit tests
+      run: tox
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
