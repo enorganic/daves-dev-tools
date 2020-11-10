@@ -5,34 +5,51 @@ import os
 import runpy
 import sys
 from distutils.core import run_setup
-from shutil import rmtree
+from time import time
 from types import ModuleType
 from typing import (
-    Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple, Union
+    Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple, Union
 )
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
 
-def _list_dist(root: str) -> FrozenSet[str]:
+def _list_dist(
+    root: str, modified_at_or_after: float = 0.0
+) -> FrozenSet[str]:
+    dist_file: str
+    dist_root: str
+    dist_sub_directories: List[str]
+    dist_files: Iterable[str]
+    dist_root, dist_sub_directories, dist_files = next(iter(
+        os.walk(os.path.join(root, 'dist'))
+    ))
+    dist_files = (
+        os.path.join(dist_root, dist_file)
+        for dist_file in dist_files
+    )
+    if modified_at_or_after:
+        dist_files = filter(
+            lambda dist_file: (  # noqa
+                os.path.getmtime(dist_file) >= modified_at_or_after
+            ),
+            dist_files
+        )
     try:
-        return frozenset((
-            f'dist/{file_name}'
-            for file_name in os.listdir(os.path.join(root, 'dist'))
-        ))
+        return frozenset(dist_files)
     except (NotADirectoryError, FileNotFoundError):
         return frozenset()
 
 
 def _setup(root: str) -> FrozenSet[str]:
-    existing_distributions: FrozenSet[str] = _list_dist(root)
+    start_time: float = time()
     current_directory: str = os.path.curdir
     os.chdir(root)
     try:
         run_setup('setup.py', ['sdist', 'bdist_wheel'])
     finally:
         os.chdir(current_directory)
-    return _list_dist(root) - existing_distributions
+    return _list_dist(root, modified_at_or_after=start_time)
 
 
 @lru_cache()
@@ -76,10 +93,8 @@ def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
         if secrets is not None:
             assert isinstance(secrets, dict)
             password = secrets[username]
-            sys.argv += ['-u', username]
-            # os.environ['TWINE_USERNAME'] = username
-            sys.argv += ['-p', password]
-            # os.environ['TWINE_PASSWORD'] = password
+            sys.argv += ['--username', username]
+            sys.argv += ['--password', password]
     return username, password
 
 
@@ -94,9 +109,9 @@ def _dist(root: str, distributions: FrozenSet[str]) -> None:
     )
     current_directory: str = os.path.curdir
     os.chdir(root)
+    print(' '.join(['twine'] + twine_argv[1:]))
     try:
         sys.argv = twine_argv
-        print(' '.join(['twine'] + twine_argv[1:]))
         runpy.run_module('twine', run_name='__main__')
     finally:
         os.chdir(current_directory)
@@ -143,13 +158,7 @@ def main(root: str) -> None:
     _get_credentials_from_cerberus()
     root = os.path.abspath(root).rstrip("/")
     try:
-        new_distributions: FrozenSet[str] = _setup(root)
-        try:
-            _dist(root, new_distributions)
-        except:  # noqa
-            distribution: str
-            for distribution in new_distributions:
-                os.remove(distribution)
+        _dist(root, _setup(root))
     finally:
         _cleanup(root)
 
