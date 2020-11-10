@@ -18,13 +18,18 @@ lru_cache: Callable[..., Any] = functools.lru_cache
 def _list_dist(
     root: str, modified_at_or_after: float = 0.0
 ) -> FrozenSet[str]:
+    dist_root: str = os.path.join(root, 'dist')
     dist_file: str
-    dist_root: str
     dist_sub_directories: List[str]
     dist_files: Iterable[str]
-    dist_root, dist_sub_directories, dist_files = next(iter(
-        os.walk(os.path.join(root, 'dist'))
-    ))
+    try:
+        dist_root, dist_sub_directories, dist_files = next(iter(
+            os.walk(dist_root)
+        ))
+    except StopIteration:
+        raise RuntimeError(
+            f'No distributions could be found in {dist_root}'
+        )
     dist_files = (
         os.path.join(dist_root, dist_file)
         for dist_file in dist_files
