@@ -1,37 +1,38 @@
-name: Distribute
-
+name: Test and Publish
 on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
-  release:
-    types:
-      - created
-
 jobs:
-  deploy:
-
+  test:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python: [3.6, 3.7, 3.8]
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Install
+      run: pip install -e '.[all]'
+    - name: Tox
+      run: tox -e py
+  distribute:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-        pip install -e '.[all]'
-    - name: Run unit tests
-      run: tox
-    - name: Build and publish
+    - name: Install
+      run: pip install -e .
+    - name: Build and Publish
       env:
-        TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-      run: |
-        python -m daves_dev_tools distribute
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: python -m daves_dev_tools distribute
+
