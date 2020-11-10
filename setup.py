@@ -56,8 +56,6 @@ setup(
         "test": ["pytest~=5.4", "tox~=3.20", "flake8~=3.8", "mypy~=0.790"],
     },
     entry_points={
-        "console_scripts": [
-            "daves-dev-tools = daves_dev_tools.__main__:main"
-        ]
-    }
+        "console_scripts": ["daves-dev-tools = daves_dev_tools.__main__:main"]
+    },
 )

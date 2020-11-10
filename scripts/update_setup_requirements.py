@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "numpy",
             "pandas",
             "pyarrow",
-            "boto3"
+            "boto3",
         },
     )
     run("black ./setup.py")
