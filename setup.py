@@ -35,28 +35,25 @@ def setup(**kwargs) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.0.3",
+    version="0.0.4",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
     python_requires="~=3.6",
-    packages=["daves_dev_tools"],
-    package_data={"daves_dev_tools": ["py.typed"]},
-    install_requires=[
-        "twine"
-    ],
+    packages=["daves_dev_tools", "daves_dev_tools.utilities"],
+    package_data={
+        "daves_dev_tools": ["py.typed"],
+        "daves_dev_tools.utilities": ["py.typed"],
+    },
+    install_requires=["twine~=3.2"],
     extras_require={
+        "cerberus": ["cerberus-python-client~=2.5", "boto3~=1.4"],
         "dev": [
             "black~=19.10b0",
             "readme-md-docstrings>=0.1.0,<1",
             "wheel~=0.35",
-            "setuptools-setup-versions>=1.4.1,<2"
+            "setuptools-setup-versions>=1.4.1,<2",
         ],
-        "test": [
-            "pytest~=5.4",
-            "tox~=3.20",
-            "flake8~=3.8",
-            "mypy~=0.790"
-        ],
+        "test": ["pytest~=5.4", "tox~=3.20", "flake8~=3.8", "mypy~=0.790"],
     },
 )
