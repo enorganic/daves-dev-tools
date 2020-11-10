@@ -27,7 +27,7 @@ def _list_dist(
             os.walk(dist_root)
         ))
     except StopIteration:
-        raise RuntimeError(
+        raise FileNotFoundError(
             f'No distributions could be found in {dist_root}'
         )
     dist_files = (
@@ -51,8 +51,11 @@ def _setup(root: str) -> FrozenSet[str]:
     start_time: float = time()
     current_directory: str = os.path.curdir
     os.chdir(root)
+    abs_setup: str = os.path.join(root, 'setup.py')
+    setup_args: List[str] = ['sdist', 'bdist_wheel']
+    print(f'{sys.executable} {abs_setup} {" ".join(setup_args)}')
     try:
-        run_setup(os.path.join(root, 'setup.py'), ['sdist', 'bdist_wheel'])
+        run_setup(abs_setup, setup_args)
     finally:
         os.chdir(current_directory)
     return _list_dist(root, modified_at_or_after=start_time)
