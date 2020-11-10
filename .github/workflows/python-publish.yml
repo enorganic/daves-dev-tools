@@ -34,4 +34,4 @@ jobs:
         TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
       run: |
-        source ./scripts/distribute.sh
+        python -m daves_dev_tools distribute

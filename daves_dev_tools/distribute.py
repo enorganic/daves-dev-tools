@@ -127,14 +127,18 @@ def _cleanup(root: str) -> None:
         os.chdir(current_directory)
 
 
-def _argv_remove(argv: List[str], key: str) -> int:
-    index: int = -1
-    try:
-        index = argv.index(key)
+def _argv_positional_last_index(argv: List[str], key: str) -> Optional[int]:
+    index: int
+    for index in range(len(argv) - 1, 0, -1):
+        if argv[index] == key and not argv[index - 1].startswith('-'):
+            return index
+    return None
+
+
+def _argv_remove_last_positional(argv: List[str], key: str) -> None:
+    index: Optional[int] = _argv_positional_last_index(argv, key)
+    if index is not None:
         argv.pop(index)
-    except ValueError:
-        pass
-    return index
 
 
 def _argv_pop(
@@ -156,7 +160,7 @@ def _argv_pop(
 
 
 def main(root: str) -> None:
-    assert _argv_remove(sys.argv, root) >= 0
+    _argv_remove_last_positional(sys.argv, root)
     _get_credentials_from_cerberus()
     root = os.path.abspath(root).rstrip("/")
     try:
@@ -190,7 +194,9 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "root",
+        type=str,
         default=".",
+        nargs="?",
         help='The root directory path for the project.'
     )
     arguments: argparse.Namespace = parser.parse_known_args()[0]

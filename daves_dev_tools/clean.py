@@ -209,7 +209,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "root",
+        type=str,
         default=".",
+        nargs="?",
         help='The root directory path for the project.'
     )
     arguments: argparse.Namespace = parser.parse_args()
