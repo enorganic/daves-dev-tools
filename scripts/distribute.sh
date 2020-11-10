@@ -1,1 +1,1 @@
-python3 -m daves_dev_tools distribute "$(dirname $0)/../"
+daves-dev-tools distribute "$(dirname $0)/../" --skip-existing
