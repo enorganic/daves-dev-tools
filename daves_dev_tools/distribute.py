@@ -135,18 +135,24 @@ def _cleanup(root: str) -> None:
         os.chdir(current_directory)
 
 
-def _argv_positional_last_index(argv: List[str], key: str) -> Optional[int]:
+def _argv_positional_last_index(argv: List[str]) -> Optional[int]:
     index: int
     for index in range(len(argv) - 1, 0, -1):
-        if argv[index] == key and not argv[index - 1].startswith('-'):
+        if not (
+            argv[index].startswith('-') or
+            argv[index - 1].startswith('-')
+        ):
             return index
     return None
 
 
-def _argv_remove_last_positional(argv: List[str], key: str) -> None:
-    index: Optional[int] = _argv_positional_last_index(argv, key)
+def _argv_pop_last_positional(
+    argv: List[str], default: Optional[str] = None
+) -> Optional[str]:
+    index: Optional[int] = _argv_positional_last_index(argv)
     if index is not None:
-        argv.pop(index)
+        return argv.pop(index)
+    return default
 
 
 def _argv_pop(
@@ -167,9 +173,9 @@ def _argv_pop(
     return value
 
 
-def main(root: str) -> None:
-    _argv_remove_last_positional(sys.argv, root)
+def main(root: str = '') -> None:
     _get_credentials_from_cerberus()
+    root = root or _argv_pop_last_positional(sys.argv, '.')
     root = os.path.abspath(root).rstrip("/")
     try:
         _dist(root, _setup(root))
@@ -178,34 +184,4 @@ def main(root: str) -> None:
 
 
 if __name__ == '__main__':
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description='Parse command-line arguments for a "distribute" operation'
-    )
-    parser.add_argument(
-        "--cerberus-url",
-        "-cu",
-        type=str,
-        default=None,
-        help=(
-            "The URL for a Cerberus API from which to retrieve repository "
-            "credentials"
-        )
-    )
-    parser.add_argument(
-        "--cerberus-path",
-        "-cp",
-        type=str,
-        default=None,
-        help=(
-            "The Cerberus path where repository credentials can be found"
-        )
-    )
-    parser.add_argument(
-        "root",
-        type=str,
-        default=".",
-        nargs="?",
-        help='The root directory path for the project.'
-    )
-    arguments: argparse.Namespace = parser.parse_known_args()[0]
-    main(arguments.root)
+    main()
