@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, FrozenSet, Iterable, Sequence, Set
 ROOT_DIRECTORY: str = "."
 EXCLUDE_DIRECTORIES: FrozenSet[str] = frozenset(
     (
-        "./.idea",  # Jetbrains IDE project settings (Pycharm, Intellij IDEA, etc.)
+        "./.idea",  # Jetbrains' IDE project settings (Pycharm, Intellij IDEA)
         "./.vscode",  # Microsoft Visual Studio Code project settings
         "./.git",  # Git history
         "./venv",  # Commonly used location for virtual environments
