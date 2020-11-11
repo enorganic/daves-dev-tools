@@ -7,7 +7,8 @@ from typing import Dict, List, Optional
 
 import boto3  # type: ignore
 from botocore.exceptions import (  # type: ignore
-    ClientError, NoCredentialsError,
+    ClientError,
+    NoCredentialsError,
 )
 from cerberus import CerberusClientException  # type: ignore
 from cerberus.client import CerberusClient  # type: ignore
@@ -17,10 +18,7 @@ __all__: List[str] = [
 ]
 
 
-def get_cerberus_secrets(
-    cerberus_url: str,
-    path: str,
-) -> Dict[str, str]:
+def get_cerberus_secrets(cerberus_url: str, path: str,) -> Dict[str, str]:
     """
     This function attempts to access Cerberus secrets at the given `path`
     with each AWS profile until successful, or until having run out of

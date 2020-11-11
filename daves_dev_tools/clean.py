@@ -7,17 +7,17 @@ import os
 import shutil
 from itertools import chain
 from subprocess import getstatusoutput
-from typing import (
-    Any, Callable, Dict, FrozenSet, Iterable, Sequence, Set
-)
+from typing import Any, Callable, Dict, FrozenSet, Iterable, Sequence, Set
 
 ROOT_DIRECTORY: str = "."
-EXCLUDE_DIRECTORIES: FrozenSet[str] = frozenset((
-    "./.idea",  # Jetbrains IDE project settings (Pycharm, Intellij IDEA, etc.)
-    "./.vscode",  # Microsoft Visual Studio Code project settings
-    "./.git",  # Git history
-    "./venv",  # Commonly used location for virtual environments
-))
+EXCLUDE_DIRECTORIES: FrozenSet[str] = frozenset(
+    (
+        "./.idea",  # Jetbrains IDE project settings (Pycharm, Intellij IDEA, etc.)
+        "./.vscode",  # Microsoft Visual Studio Code project settings
+        "./.git",  # Git history
+        "./venv",  # Commonly used location for virtual environments
+    )
+)
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -34,10 +34,9 @@ def _run(command: str) -> str:
 
 @lru_cache()
 def _is_excluded(
-    absolute_path: str,
-    exclude_directories: FrozenSet[str] = frozenset()
+    absolute_path: str, exclude_directories: FrozenSet[str] = frozenset()
 ) -> bool:
-    absolute_path = absolute_path.rstrip('/')
+    absolute_path = absolute_path.rstrip("/")
     for directory_path in exclude_directories:
         if absolute_path.startswith(f"{directory_path}/"):
             return True
@@ -49,15 +48,16 @@ def _absolute_sub_directories(
     root_directory: str, directories: FrozenSet[str]
 ) -> FrozenSet[str]:
     directory: str
-    return frozenset((
-        os.path.abspath(os.path.join(root_directory, directory))
-        for directory in directories
-    ))
+    return frozenset(
+        (
+            os.path.abspath(os.path.join(root_directory, directory))
+            for directory in directories
+        )
+    )
 
 
 def get_ignored_files(
-    root_directory: str,
-    exclude_directories: FrozenSet[str] = frozenset(),
+    root_directory: str, exclude_directories: FrozenSet[str] = frozenset(),
 ) -> Iterable[str]:
     """
     Yield the absolute path of all ignored files, excluding those in any of the
@@ -76,15 +76,12 @@ def get_ignored_files(
     exclude_directory: str
     root_directory = os.path.abspath(root_directory)
     exclude_directories = _absolute_sub_directories(
-        root_directory,
-        exclude_directories
+        root_directory, exclude_directories
     )
     path_prefix: str = f'{root_directory.rstrip("/")}/'
     path_prefix_length: int = len(path_prefix)
-    for path in _run(
-        f"git ls-files -o '{root_directory}'"
-    ).split("\n"):
-        path = os.path.abspath(f'./{path}')
+    for path in _run(f"git ls-files -o '{root_directory}'").split("\n"):
+        path = os.path.abspath(f"./{path}")
         if not _is_excluded(path, exclude_directories):
             directory_name = ""
             if "/" in path[path_prefix_length:]:
@@ -123,8 +120,7 @@ def delete_empty_directories(
     if not _recurrence:
         root_directory = os.path.abspath(root_directory)
         exclude_directories = _absolute_sub_directories(
-            root_directory,
-            exclude_directories
+            root_directory, exclude_directories
         )
     for root, directories, files in os.walk(root_directory, topdown=False):
         root = os.path.abspath(root)
@@ -140,7 +136,7 @@ def delete_empty_directories(
         number_of_deleted_directories += delete_empty_directories(
             root_directory,
             exclude_directories=exclude_directories,
-            _recurrence=False
+            _recurrence=False,
         )
     if _recurrence and number_of_deleted_directories:
         print(f"Deleted {number_of_deleted_directories} empty directories")
@@ -148,8 +144,7 @@ def delete_empty_directories(
 
 
 def delete_ignored(
-    root_directory: str,
-    exclude_directories: FrozenSet[str] = frozenset(),
+    root_directory: str, exclude_directories: FrozenSet[str] = frozenset(),
 ) -> None:
     """
     Delete files which are ignored by Git.
@@ -161,14 +156,13 @@ def delete_ignored(
       which should not be touched.
     """
     for path in get_ignored_files(
-        root_directory=root_directory,
-        exclude_directories=exclude_directories
+        root_directory=root_directory, exclude_directories=exclude_directories
     ):
         os.remove(path)
 
 
 def main(
-    root_directory: str = '.',
+    root_directory: str = ".",
     exclude_directories: FrozenSet[str] = EXCLUDE_DIRECTORIES,
 ) -> None:
     """
@@ -212,14 +206,14 @@ if __name__ == "__main__":
         type=str,
         default=".",
         nargs="?",
-        help='The root directory path for the project.'
+        help="The root directory path for the project.",
     )
     arguments: argparse.Namespace = parser.parse_args()
     main(
         root_directory=arguments.root,
         exclude_directories=(
             frozenset(os.path.split(arguments.exclude))
-            if arguments.exclude else
-            EXCLUDE_DIRECTORIES
-        )
+            if arguments.exclude
+            else EXCLUDE_DIRECTORIES
+        ),
     )
