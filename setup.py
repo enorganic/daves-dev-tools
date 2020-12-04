@@ -35,7 +35,7 @@ def setup(**kwargs) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.0.23",
+    version="0.1.0",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
