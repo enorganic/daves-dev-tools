@@ -102,7 +102,7 @@ def setup(**kwargs) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.3.0",
+    version="0.3.1",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
@@ -120,7 +120,13 @@ setup(
             "readme-md-docstrings>=0.1.0,<1",
             "setuptools-setup-versions>=1.4.1,<2",
         ],
-        "test": ["pytest~=5.4", "tox~=3.20", "flake8~=3.8", "mypy~=0.790"],
+        "test": [
+            "pytest~=5.4",
+            "tox~=3.20",
+            "flake8~=3.8",
+            "mypy~=0.790",
+            "pip>=20.3.1",
+        ],
     },
     entry_points={
         "console_scripts": ["daves-dev-tools = daves_dev_tools.__main__:main"]
