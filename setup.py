@@ -35,7 +35,7 @@ def setup(**kwargs) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.1.0",
+    version="0.2.0",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
@@ -45,9 +45,9 @@ setup(
         "daves_dev_tools": ["py.typed"],
         "daves_dev_tools.utilities": ["py.typed"],
     },
-    install_requires=["twine~=3.2", "wheel~=0.35"],
+    install_requires=["twine~=3.2", "wheel~=0.36"],
     extras_require={
-        "cerberus": ["cerberus-python-client~=2.5", "boto3~=1.4"],
+        "cerberus": ["cerberus-python-client~=2.5"],
         "dev": [
             "black~=19.10b0",
             "readme-md-docstrings>=0.1.0,<1",
