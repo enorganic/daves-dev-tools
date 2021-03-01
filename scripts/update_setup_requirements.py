@@ -5,7 +5,7 @@ This script updates installation requirements in ../setup.py
 import os
 from subprocess import getstatusoutput
 
-from setuptools_setup_versions import requirements
+from setuptools_setup_versions import requirements  # type: ignore
 
 
 def run(command: str) -> str:

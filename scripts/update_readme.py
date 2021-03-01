@@ -1,6 +1,6 @@
 import os
 
-import readme_md_docstrings
+import readme_md_docstrings  # type: ignore
 
 if __name__ == "__main__":
     # `cd` into the repository's root directory

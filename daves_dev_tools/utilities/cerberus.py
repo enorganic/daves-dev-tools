@@ -33,10 +33,7 @@ def get_cerberus_secrets(cerberus_url: str, path: str,) -> Dict[str, str]:
     if (boto3 is None) or (CerberusClient is None):
         raise RuntimeError(
             "The `boto3` and `cerberus-python-client` packages must be "
-            "installed in order to use "
-            "`nike.analytics_orm.utilities.get_cerberus_secrets`. "
-            'Install the package option "nike-analytics-orm[cerberus]" '
-            "in order to use this function."
+            "installed in order to use this function."
         )
     secrets: Optional[Dict[str, str]] = None
     errors: Dict[str, str] = OrderedDict()

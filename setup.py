@@ -5,15 +5,15 @@ from itertools import chain
 from typing import (
     Dict,
     Iterable,
-    List,
     Match,
     Optional,
     Pattern,
     Sequence,
     Set,
+    Any,
 )
 
-import setuptools
+import setuptools  # type: ignore
 
 _INSTALL_REQUIRES: str = "install_requires"
 
@@ -24,25 +24,24 @@ _extras_pattern: Pattern = re.compile(r"^([^\[]+\[)([^\]]+)(\].*)$")
 def consolidate_requirement_options(
     requirements: Iterable[str],
 ) -> Iterable[str]:
+    template: str
     requirement: str
     templates_options: Dict[str, Set[str]] = OrderedDict()
     traversed_requirements: Set[str] = set()
     for requirement in requirements:
-        print(requirement)
         match: Optional[Match] = _extras_pattern.match(requirement)
         if match:
             groups: Sequence[str] = match.groups()
             no_extras_requirement: str = f"{groups[0][:-1]}{groups[2][1:]}"
-            template: str = f"{groups[0]}{{}}{groups[2]}"
+            template = f"{groups[0]}{{}}{groups[2]}"
             if template not in templates_options:
                 templates_options[template] = set()
             templates_options[template] |= set(groups[1].split(","))
             if no_extras_requirement in templates_options:
                 del templates_options[no_extras_requirement]
         elif requirement not in traversed_requirements:
-            templates_options[requirement] = None
-    template: str
-    options: Optional[List[str]]
+            templates_options[requirement] = set()
+    options: Set[str]
     for template, options in templates_options.items():
         if options:
             yield template.format(",".join(sorted(options)))
@@ -50,7 +49,7 @@ def consolidate_requirement_options(
             yield template
 
 
-def setup(**kwargs) -> None:
+def setup(**kwargs: Any) -> None:
     """
     This `setup` script intercepts arguments to be passed to
     `setuptools.setup` in order to dynamically alter setup requirements
@@ -68,7 +67,13 @@ def setup(**kwargs) -> None:
         if "all" not in kwargs["extras_require"]:
             kwargs["extras_require"]["all"] = list(
                 consolidate_requirement_options(
-                    chain(*kwargs["extras_require"].values())
+                    chain(
+                        *(
+                            values
+                            for key, values in kwargs["extras_require"].items()
+                            if key not in ("dev", "test")
+                        )
+                    )
                 )
             )
         kwargs["extras_require"]["test"] = list(
@@ -102,7 +107,7 @@ def setup(**kwargs) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.3.1",
+    version="0.3.2",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
@@ -116,11 +121,11 @@ setup(
     extras_require={
         "cerberus": ["cerberus-python-client~=2.5"],
         "dev": [
-            "black~=19.10b0",
             "readme-md-docstrings>=0.1.0,<1",
             "setuptools-setup-versions>=1.4.1,<2",
         ],
         "test": [
+            "black~=19.10b0",
             "pytest~=5.4",
             "tox~=3.20",
             "flake8~=3.8",
