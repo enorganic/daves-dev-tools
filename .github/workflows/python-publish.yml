@@ -16,7 +16,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: Install
-      run: pip install -e '.[all]'
+      run: pip3 install --upgrade pip && pip install -e '.[test]'
     - name: Tox
       run: tox -e py
   distribute:
@@ -29,7 +29,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install
-      run: pip install -e '.[all]'
+      run: pip install -e '.[test]'
     - name: Build and Publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
