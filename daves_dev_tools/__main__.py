@@ -1,11 +1,8 @@
 import argparse
-import functools
 import runpy
 import sys
-from typing import Any, Callable
 
-lru_cache: Callable[..., Any] = functools.lru_cache
-_PACKAGE_NAME: str = __file__.split("/")[-2]
+from . import __name__ as _MODULE_NAME
 
 
 def _get_command() -> str:
@@ -29,7 +26,7 @@ def main(command: str = "") -> None:
     - command (str): The name of a sub-module to run as "__main__".
     """
     command = command or _get_command()
-    module_name: str = f"{_PACKAGE_NAME}.{command}"
+    module_name: str = f"{_MODULE_NAME}.{command}"
     runpy.run_module(module_name, run_name="__main__")
 
 

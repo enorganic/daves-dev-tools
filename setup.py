@@ -107,7 +107,7 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.3.2",
+    version="0.3.3",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
