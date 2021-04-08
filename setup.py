@@ -107,7 +107,7 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.3.3",
+    version="0.4.0",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
@@ -116,6 +116,7 @@ setup(
     package_data={
         "daves_dev_tools": ["py.typed"],
         "daves_dev_tools.utilities": ["py.typed"],
+        "daves_dev_tools.git": ["py.typed"],
     },
     install_requires=["twine~=3.2", "wheel~=0.36"],
     extras_require={
