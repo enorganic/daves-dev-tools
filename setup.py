@@ -123,7 +123,7 @@ setup(
         "cerberus": ["cerberus-python-client~=2.5"],
         "dev": ["readme-md-docstrings~=0.1", "setuptools-setup-versions~=1.8"],
         "test": [
-            "black>=19.10b0",
+            "black>=20.8b1",
             "pytest>=5.4",
             "tox>=3.20",
             "flake8>=3.8",
