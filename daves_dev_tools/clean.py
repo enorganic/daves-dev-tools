@@ -57,7 +57,8 @@ def _absolute_sub_directories(
 
 
 def get_ignored_files(
-    root_directory: str, exclude_directories: FrozenSet[str] = frozenset(),
+    root_directory: str,
+    exclude_directories: FrozenSet[str] = frozenset(),
 ) -> Iterable[str]:
     """
     Yield the absolute path of all ignored files, excluding those in any of the
@@ -144,7 +145,8 @@ def delete_empty_directories(
 
 
 def delete_ignored(
-    root_directory: str, exclude_directories: FrozenSet[str] = frozenset(),
+    root_directory: str,
+    exclude_directories: FrozenSet[str] = frozenset(),
 ) -> None:
     """
     Delete files which are ignored by Git.

@@ -18,7 +18,10 @@ __all__: List[str] = [
 ]
 
 
-def get_cerberus_secrets(cerberus_url: str, path: str,) -> Dict[str, str]:
+def get_cerberus_secrets(
+    cerberus_url: str,
+    path: str,
+) -> Dict[str, str]:
     """
     This function attempts to access Cerberus secrets at the given `path`
     with each AWS profile until successful, or until having run out of
