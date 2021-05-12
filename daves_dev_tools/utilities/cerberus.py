@@ -16,6 +16,7 @@ from cerberus.client import CerberusClient  # type: ignore
 
 __all__: List[str] = [
     "get_cerberus_secrets",
+    "get_cerberus_secret"
 ]
 lru_cache: Callable[..., Any] = functools.lru_cache
 
