@@ -14,10 +14,7 @@ from botocore.exceptions import (  # type: ignore
 from cerberus import CerberusClientException  # type: ignore
 from cerberus.client import CerberusClient  # type: ignore
 
-__all__: List[str] = [
-    "get_cerberus_secrets",
-    "get_cerberus_secret"
-]
+__all__: List[str] = ["get_cerberus_secrets", "get_cerberus_secret"]
 lru_cache: Callable[..., Any] = functools.lru_cache
 
 
