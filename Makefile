@@ -9,3 +9,9 @@ install:
 
 clean:
 	venv/bin/daves-dev-tools clean
+
+distribute:
+	venv/bin/daves-dev-tools . --skip-existing
+
+requirements:
+	venv/bin/python3 scripts/update_setup_requirements.py

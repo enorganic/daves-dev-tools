@@ -29,9 +29,9 @@ def consolidate_requirement_options(
     templates_options: Dict[str, Set[str]] = OrderedDict()
     traversed_requirements: Set[str] = set()
     for requirement in requirements:
-        match: Optional[Match] = _extras_pattern.match(requirement)
-        if match:
-            groups: Sequence[str] = match.groups()
+        matched: Optional[Match] = _extras_pattern.match(requirement)
+        if matched:
+            groups: Sequence[str] = matched.groups()
             no_extras_requirement: str = f"{groups[0][:-1]}{groups[2][1:]}"
             template = f"{groups[0]}{{}}{groups[2]}"
             if template not in templates_options:
@@ -107,31 +107,32 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="daves-dev-tools",
-    version="0.7.0",
+    version="0.8.0",
     description="Dave's Dev Tools",
     author="David Belais",
     author_email="david@belais.me",
     python_requires="~=3.6",
-    packages=["daves_dev_tools", "daves_dev_tools.utilities"],
+    packages=[
+        "daves_dev_tools",
+        "daves_dev_tools.wheel",
+        "daves_dev_tools.git",
+    ],
     package_data={
         "daves_dev_tools": ["py.typed"],
-        "daves_dev_tools.utilities": ["py.typed"],
+        "daves_dev_tools.wheel": ["py.typed"],
         "daves_dev_tools.git": ["py.typed"],
     },
     install_requires=["twine>=3.2", "wheel>=0.36"],
     extras_require={
         "cerberus": ["cerberus-python-client~=2.5"],
-        "dev": [
-            "readme-md-docstrings~=0.1",
-            "setuptools-setup-versions~=1.15",
-        ],
+        "dev": ["setuptools-setup-versions~=1.18"],
         "test": [
-            "black>=21.4b2",
+            "black>=21.7b0",
             "pytest>=5.4",
             "tox>=3.20",
             "flake8>=3.9",
-            "mypy>=0.812",
-            "pip>=21.1.1",
+            "mypy>=0.910",
+            "pip>=21.1.2",
         ],
     },
     entry_points={

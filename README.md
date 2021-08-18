@@ -1,1 +1,132 @@
 # daves-dev-tools
+
+This project provides command line utilities for performing common python
+development tasks.
+
+## Installation
+
+You can install daves-dev-tools with pip:
+
+```shell
+pip3 install daves-dev-tools
+```
+
+In order to use some features of this library, you will need to specify
+one or more *extras*:
+- "cerberus": This extra installs requirements needed in order to import
+  `daves_dev_tools.cerberus`, which provides utilities for interacting
+  with a [Cerberus](https://engineering.nike.com/cerberus/) vault.
+  ```shell
+  pip3 install daves-dev-tools[cerberus]
+  ```
+
+To install this project for development of *this library*:
+
+- Clone this repository (replacing "~/Code", below, with the directory
+  under which you want your project to reside):
+  ```shell script
+  cd ~/Code && \
+  git clone\
+   https://github.com/davebelais/daves-dev-tools.git\
+   daves-dev-tools && \
+  cd nike-sustainability-dev-tools
+  ```
+- Create and activate a new virtual environment:
+  ```shell
+  python3 -m venv venv && \
+  source venv/bin/activate
+  ```
+- Install the project in-place:
+  ```shell script
+  pip3 install -e '.[test,dev]'
+  ```
+  
+## Usage
+
+### Command Line Interface
+
+#### daves-dev-tools clean
+
+```
+$ daves-dev-tools clean -h
+usage: daves-dev-tools [-h] [--exclude EXCLUDE] [root]
+
+positional arguments:
+  root                  The root directory path for the project.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --exclude EXCLUDE, -e EXCLUDE
+                        A path list of sub-directories to exclude (separated
+                        by ":" or ";", depending on the operating system).
+```
+
+#### daves-dev-tools distribute
+
+```
+$ daves-dev-tools distribute -h
+usage: daves-dev-tools distribute [-h] [-r REPOSITORY] [--repository-url REPOSITORY_URL]
+                    [-s] [--sign-with SIGN_WITH] [-i IDENTITY] [-u USERNAME]
+                    [-p PASSWORD] [--non-interactive] [-c COMMENT]
+                    [--config-file CONFIG_FILE] [--skip-existing]
+                    [--cert path] [--client-cert path] [--verbose]
+                    [--disable-progress-bar]
+                    dist [dist ...]
+
+positional arguments:
+  dist                  The distribution files to upload to the repository
+                        (package index). Usually dist/* . May additionally
+                        contain a .asc file to include an existing signature
+                        with the file upload.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r REPOSITORY, --repository REPOSITORY
+                        The repository (package index) to upload the package
+                        to. Should be a section in the config file (default:
+                        pypi). (Can also be set via TWINE_REPOSITORY
+                        environment variable.)
+  --repository-url REPOSITORY_URL
+                        The repository (package index) URL to upload the
+                        package to. This overrides --repository. (Can also be
+                        set via TWINE_REPOSITORY_URL environment variable.)
+  -s, --sign            Sign files to upload using GPG.
+  --sign-with SIGN_WITH
+                        GPG program used to sign uploads (default: gpg).
+  -i IDENTITY, --identity IDENTITY
+                        GPG identity used to sign files.
+  -u USERNAME, --username USERNAME
+                        The username to authenticate to the repository
+                        (package index) as. (Can also be set via
+                        TWINE_USERNAME environment variable.)
+  -p PASSWORD, --password PASSWORD
+                        The password to authenticate to the repository
+                        (package index) with. (Can also be set via
+                        TWINE_PASSWORD environment variable.)
+  --non-interactive     Do not interactively prompt for username/password if
+                        the required credentials are missing. (Can also be set
+                        via TWINE_NON_INTERACTIVE environment variable.)
+  -c COMMENT, --comment COMMENT
+                        The comment to include with the distribution file.
+  --config-file CONFIG_FILE
+                        The .pypirc config file to use.
+  --skip-existing       Continue uploading files if one already exists. (Only
+                        valid when uploading to PyPI. Other implementations
+                        may not support this.)
+  --cert path           Path to alternate CA bundle (can also be set via
+                        TWINE_CERT environment variable).
+  --client-cert path    Path to SSL client certificate, a single file
+                        containing the private key and the certificate in PEM
+                        format.
+  --verbose             Show verbose output.
+  --disable-progress-bar
+                        Disable the progress bar.
+```
+
+#### daves-dev-tools git get
+
+(WIP)
+
+#### daves-dev-tools wheel bundle
+
+(WIP)

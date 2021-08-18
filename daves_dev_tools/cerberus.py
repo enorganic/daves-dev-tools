@@ -16,6 +16,8 @@ from cerberus.client import CerberusClient  # type: ignore
 
 __all__: List[str] = ["get_cerberus_secrets", "get_cerberus_secret"]
 lru_cache: Callable[..., Any] = functools.lru_cache
+# For backwards compatibility:
+sys.modules["daves_dev_tools.utilities.cerberus"] = sys.modules[__name__]
 
 
 @lru_cache()

@@ -163,7 +163,7 @@ def delete_ignored(
         os.remove(path)
 
 
-def main(
+def clean(
     root_directory: str = ".",
     exclude_directories: FrozenSet[str] = EXCLUDE_DIRECTORIES,
 ) -> None:
@@ -183,12 +183,12 @@ def main(
     )
 
 
-main.__doc__ = main.__doc__.format(  # type: ignore
+clean.__doc__ = clean.__doc__.format(  # type: ignore
     EXCLUDE_DIRECTORIES=EXCLUDE_DIRECTORIES
 )
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description='Parse command-line arguments for a "clean" operation'
     )
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         help="The root directory path for the project.",
     )
     arguments: argparse.Namespace = parser.parse_args()
-    main(
+    clean(
         root_directory=arguments.root,
         exclude_directories=(
             frozenset(os.path.split(arguments.exclude))
@@ -219,3 +219,7 @@ if __name__ == "__main__":
             else EXCLUDE_DIRECTORIES
         ),
     )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,7 @@
 import functools
 import importlib
 import os
+import re
 import runpy
 import sys
 from distutils.core import run_setup
@@ -15,9 +16,12 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
 )
+
+from .utilities import run
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -65,7 +69,22 @@ def _setup(root: str) -> FrozenSet[str]:
     return _list_dist(root, modified_at_or_after=start_time)
 
 
-@lru_cache()
+def _get_help() -> bool:
+    """
+    If `-h` or `--help` keyword arguments are provided,
+    retrieve the repository credentials and store them in the "TWINE_USERNAME"
+    and "TWINE_PASSWORD" environment variables.
+    """
+    if set(sys.argv) & {"-h", "--help", "-H", "--HELP"}:
+        help_: str = run(f"{sys.executable} -m twine upload -h", echo=False)
+        help_ = re.sub(
+            r"\btwine upload\b", "daves-dev-tools distribute", help_
+        )
+        print(help_)
+        return True
+    return False
+
+
 def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
     """
     If `--cerberus-url` and `--cerberus-path` keyword arguments are provided,
@@ -109,14 +128,15 @@ def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
     return username, password
 
 
-def _dist(root: str, distributions: FrozenSet[str]) -> None:
+def _dist(root: str, distributions: FrozenSet[str], echo: bool = True) -> None:
     argv: List[str] = sys.argv
     twine_argv: List[str] = list(
         chain(sys.argv[:1], ["upload"], sys.argv[1:], sorted(distributions))
     )
     current_directory: str = os.path.curdir
     os.chdir(root)
-    print(" ".join(["twine"] + twine_argv[1:]))  # type: ignore
+    if echo:
+        print(" ".join(["twine"] + twine_argv[1:]))  # type: ignore
     try:
         sys.argv = twine_argv
         runpy.run_module("twine", run_name="__main__")
@@ -134,18 +154,38 @@ def _cleanup(root: str) -> None:
         os.chdir(current_directory)
 
 
-def _argv_positional_last_index(argv: List[str]) -> Optional[int]:
+def _negative_enumerate_index(item: Tuple[int, Any]) -> Tuple[int, Any]:
+    return -item[0], item[1]
+
+
+def _argv_get_last_index(
+    argv: List[str], keys: Optional[Set[str]] = None
+) -> Optional[int]:
+    """
+    Return the index of the last item in `argv` which matches one of the
+    indicated keys, or `None`, if not found. If no keys are provided,
+    find the index of the last positional argument.
+    """
+    if isinstance(keys, str):
+        keys = {keys}
     index: int
-    for index in range(len(argv) - 1, 0, -1):
-        if not (
-            argv[index].startswith("-") or argv[index - 1].startswith("-")
-        ):
-            return index
+    for index, value in map(
+        _negative_enumerate_index, enumerate(reversed(argv), 1)  # type: ignore
+    ):
+        if keys is not None:
+            if value in keys:
+                return index
+        elif not value.startswith("-"):
+            try:
+                if not argv[index - 1].startswith("-"):
+                    return -index
+            except IndexError:
+                pass
     return None
 
 
 def _argv_pop_last_positional(argv: List[str], default: str = "") -> str:
-    index: Optional[int] = _argv_positional_last_index(argv)
+    index: Optional[int] = _argv_get_last_index(argv)
     if index is not None:
         return argv.pop(index)
     return default
@@ -170,13 +210,14 @@ def _argv_pop(
 
 
 def main(root: str = "") -> None:
-    _get_credentials_from_cerberus()
-    root = root or _argv_pop_last_positional(sys.argv, ".")
-    root = os.path.abspath(root).rstrip("/")
-    try:
-        _dist(root, _setup(root))
-    finally:
-        _cleanup(root)
+    if not _get_help():
+        _get_credentials_from_cerberus()
+        root = root or _argv_pop_last_positional(sys.argv, ".")
+        root = os.path.abspath(root).rstrip("/")
+        try:
+            _dist(root, _setup(root))
+        finally:
+            _cleanup(root)
 
 
 if __name__ == "__main__":
