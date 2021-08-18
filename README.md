@@ -29,7 +29,7 @@ To install this project for development of *this library*:
   git clone\
    https://github.com/davebelais/daves-dev-tools.git\
    daves-dev-tools && \
-  cd nike-sustainability-dev-tools
+  cd daves-dev-tools
   ```
 - Create and activate a new virtual environment:
   ```shell
