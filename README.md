@@ -114,7 +114,7 @@ optional arguments:
                         Disable the progress bar.
 ```
 
-#### daves-dev-tools git get
+#### daves-dev-tools git download
 
 (WIP)
 
