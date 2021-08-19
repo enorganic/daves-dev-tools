@@ -104,7 +104,7 @@ def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
         # are optional (only installed with the package extra
         # "daves-dev-tools[cerberus]")
         cerberus: ModuleType = importlib.import_module(
-            ".utilities.cerberus",
+            ".cerberus",
             (
                 os.path.split(os.path.dirname(__file__))[-1]
                 if __name__ == "__main__"
