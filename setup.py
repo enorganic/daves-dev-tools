@@ -128,11 +128,11 @@ setup(
         "dev": ["setuptools-setup-versions~=1.18"],
         "test": [
             "black>=21.7b0",
-            "pytest>=5.4",
-            "tox>=3.20",
+            "pytest>=6.2",
+            "tox>=3.24",
             "flake8>=3.9",
             "mypy>=0.910",
-            "pip>=21.1.2",
+            "pip>=21.2.4",
         ],
     },
     entry_points={

@@ -20,26 +20,17 @@ one or more *extras*:
   pip3 install daves-dev-tools[cerberus]
   ```
 
-To install this project for development of *this library*:
-
-- Clone this repository (replacing "~/Code", below, with the directory
-  under which you want your project to reside):
-  ```shell script
-  cd ~/Code && \
-  git clone\
-   https://github.com/davebelais/daves-dev-tools.git\
-   daves-dev-tools && \
-  cd daves-dev-tools
-  ```
-- Create and activate a new virtual environment:
-  ```shell
-  python3 -m venv venv && \
-  source venv/bin/activate
-  ```
-- Install the project in-place:
-  ```shell script
-  pip3 install -e '.[test,dev]'
-  ```
+To install this project for development of *this library*,
+clone this repository (replacing "~/Code", below, with the directory
+under which you want your project to reside), then run `make`:
+```shell script
+cd ~/Code && \
+git clone\
+ https://github.com/davebelais/daves-dev-tools.git\
+ daves-dev-tools && \
+cd daves-dev-tools && \
+make
+```
   
 ## Usage
 
