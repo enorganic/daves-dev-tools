@@ -190,7 +190,7 @@ clean.__doc__ = clean.__doc__.format(  # type: ignore
 
 def main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description='Parse command-line arguments for a "clean" operation'
+        prog="daves-dev-tool clean"
     )
     parser.add_argument(
         "--exclude",

@@ -1,11 +1,9 @@
-.PHONY:
-	install
-	clean
-.DEFAULT_GOAL := install
-
 install:
 	(python3.6 -m venv venv || python3 -m venv venv) && \
-	venv/bin/pip3 install -e '.[test,dev]'
+	venv/bin/pip3 install\
+	 -r test_requirements.txt\
+	 -r dev_requirements.txt\
+	 -e '.[all]'
 
 clean:
 	venv/bin/daves-dev-tools clean
