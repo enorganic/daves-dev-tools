@@ -114,6 +114,32 @@ optional arguments:
                         Disable the progress bar.
 ```
 
+#### daves-dev-tools requirements update
+
+```
+$ daves-dev-tools requirements update -h
+usage: daves-dev-tools requirements update [-h] [-i IGNORE]
+                                           [-aen ALL_EXTRA_NAME]
+                                           path [path ...]
+
+positional arguments:
+  path                  One or more local paths to a *setup.cfg* and/or
+                        *requirements.txt* file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i IGNORE, --ignore IGNORE
+                        A comma-separated list of distributions to ignore
+                        (leave any requirements pertaining to the package as-
+                        is)
+  -aen ALL_EXTRA_NAME, --all-extra-name ALL_EXTRA_NAME
+                        If provided, an extra which consolidates the
+                        requirements for all other extras will be
+                        added/updated to *setup.cfg* (this argument is ignored
+                        for *requirements.txt* files)
+  -v, --verbose         Echo more verbose output
+```
+
 #### daves-dev-tools git download
 
 (WIP)
