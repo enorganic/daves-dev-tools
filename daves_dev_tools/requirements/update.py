@@ -1,6 +1,7 @@
 import os
 import argparse
-import json
+import tomli
+import tomli_w
 from io import StringIO
 from dataclasses import dataclass
 from pkg_resources import Distribution
@@ -223,24 +224,14 @@ def get_updated_pyproject_toml(
         return _get_updated_requirement_string(requirement, ignore=ignore_set)
 
     # Parse
-    parser: ConfigParser = ConfigParser()
-    parser.read_string(data)
-    if ("build-system" in parser) and ("requires" in parser["build-system"]):
-        parser["build-system"]["requires"] = json.dumps(
-            list(
-                map(
-                    get_updated_requirement,
-                    eval(parser["build-system"]["requires"]),
-                )
-            ),
-            indent=4,
+    pyproject: Dict[str, Any] = tomli.loads(data)
+    if ("build-system" in pyproject) and (
+        "requires" in pyproject["build-system"]
+    ):
+        pyproject["build-system"]["requires"] = list(
+            map(get_updated_requirement, pyproject["build-system"]["requires"])
         )
-        # Return as a string
-        pyproject_toml_io: IO[str]
-        with StringIO() as pyproject_toml_io:
-            parser.write(pyproject_toml_io)
-            pyproject_toml_io.seek(0)
-            return pyproject_toml_io.read()
+        return tomli_w.dumps(pyproject)
     return data
 
 
@@ -293,12 +284,23 @@ def update(
     """
     if isinstance(paths, str):
         paths = (paths,)
-    reinstall_editable(echo=verbose)
+    path_directories: Iterable[str] = map(
+        os.path.abspath,  # type: ignore
+        map(os.path.dirname, paths),  # type: ignore
+    )
+    # Reinstall all editable distributions, excluding those wherein
+    # the files being updated live (since there may be invalid requirement
+    # specifiers in these files until the updates are performed)
+    reinstall_editable(exclude_paths=path_directories, echo=verbose)
 
     def update_(path: str) -> None:
         _update(path, ignore=ignore, all_extra_name=all_extra_name)
 
     list(map(update_, paths))
+    # Reinstall any editable distributions which live in the same
+    # directory as the files being updated (and therefore typically belonging
+    # to the same project)
+    reinstall_editable(include_paths=path_directories, echo=verbose)
 
 
 def main() -> None:

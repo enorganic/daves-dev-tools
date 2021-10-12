@@ -58,7 +58,10 @@ def _distribution_is_editable(distribution: Distribution) -> bool:
 
 
 def _iter_editable_distributions(
-    distribution_names: Set[str],
+    include: Set[str],
+    exclude: Set[str],
+    include_paths: Set[str],
+    exclude_paths: Set[str],
 ) -> Iterable[Distribution]:
     def include_distribution_item(
         name_distribution: Tuple[str, Distribution]
@@ -66,7 +69,22 @@ def _iter_editable_distributions(
         name: str
         distribution: Distribution
         name, distribution = name_distribution
-        if (not distribution_names) or (name in distribution_names):
+        if (
+            ((not include) or (name in include))
+            and ((not exclude) or (name not in exclude))
+            and (
+                (not include_paths)
+                or (
+                    os.path.abspath(distribution.location) not in include_paths
+                )
+            )
+            and (
+                (not exclude_paths)
+                or (
+                    os.path.abspath(distribution.location) not in exclude_paths
+                )
+            )
+        ):
             return _distribution_is_editable(distribution)
         return False
 
@@ -95,15 +113,44 @@ def _reinstall_distribution(
 
 
 def reinstall_editable(
-    distribution_names: Iterable[str] = (), echo: bool = False
+    include: Iterable[str] = (),
+    exclude: Iterable[str] = (),
+    include_paths: Iterable[str] = (),
+    exclude_paths: Iterable[str] = (),
+    echo: bool = False,
 ) -> None:
     """
     This function re-installs editable distributions.
+
+    Parameters:
+
+    - include ([str]):
+      One or more distribution names to include (excluding all others)
+    - exclude ([str])
+      One or more distribution names to exclude
+    - include_paths ([str])
+      One or more distribution locations to include (excluding all others)
+    - exclude_paths ([str])
+      One or more distribution locations to exclude
+    - echo (bool): If `True`, the "pip install ..." commands are printed to
+      `sys.stdout`
     """
-    if isinstance(distribution_names, str):
-        distribution_names = {normalize_name(distribution_names)}
+    if isinstance(include, str):
+        include = {normalize_name(include)}
     else:
-        distribution_names = set(map(normalize_name, distribution_names))
+        include = set(map(normalize_name, include))
+    if isinstance(exclude, str):
+        exclude = {normalize_name(exclude)}
+    else:
+        exclude = set(map(normalize_name, exclude))
+    if isinstance(include_paths, str):
+        include_paths = {os.path.abspath(include_paths)}
+    else:
+        include_paths = set(map(os.path.abspath, include_paths))
+    if isinstance(exclude_paths, str):
+        exclude_paths = {os.path.abspath(exclude_paths)}
+    else:
+        exclude_paths = set(map(os.path.abspath, exclude_paths))
 
     def reinstall_distribution_(distribution: Distribution) -> None:
         _reinstall_distribution(distribution, echo=echo)
@@ -111,7 +158,9 @@ def reinstall_editable(
     list(
         map(
             reinstall_distribution_,
-            _iter_editable_distributions(distribution_names),
+            _iter_editable_distributions(
+                include, exclude, include_paths, exclude_paths
+            ),
         )
     )
     _get_installed_distributions.cache_clear()

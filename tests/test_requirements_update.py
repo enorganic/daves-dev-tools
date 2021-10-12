@@ -1,5 +1,6 @@
 import unittest
 import os
+import tomli
 from typing import Iterable
 from configparser import ConfigParser
 from packaging.requirements import Requirement
@@ -126,9 +127,11 @@ class TestRequirementsUpdate(unittest.TestCase):
             )
             assert updated_pyproject_toml_data != pyproject_toml_data
         # Ensure all versions are updated to a non-zero release number
-        parser: ConfigParser = ConfigParser()
-        parser.read_string(updated_pyproject_toml_data)
-        validate_requirements(eval(parser["build-system"]["requires"]))
+        validate_requirements(
+            tomli.loads(updated_pyproject_toml_data)["build-system"][
+                "requires"
+            ]
+        )
 
     def test_get_updated_requirements_txt(self) -> None:
         """
