@@ -13,4 +13,4 @@ distribute:
 requirements:
 	venv/bin/daves-dev-tools requirements update\
 	 -aen all\
-	 setup.cfg requirements.txt pyproject.toml
+	 setup.cfg test_requirements.txt pyproject.toml

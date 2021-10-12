@@ -53,7 +53,7 @@ def run(command: str, echo: bool = True) -> str:
     status, output = getstatusoutput(command)
     # Create an error if a non-zero exit status is encountered
     if status:
-        raise OSError(output)
+        raise OSError(output if echo else f"$ {command}\n{output}")
     else:
         output = output.strip()
         if output and echo:

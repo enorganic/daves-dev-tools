@@ -1,6 +1,6 @@
 import os
 import argparse
-import toml  # type: ignore
+import json
 from io import StringIO
 from dataclasses import dataclass
 from pkg_resources import Distribution
@@ -223,16 +223,24 @@ def get_updated_pyproject_toml(
         return _get_updated_requirement_string(requirement, ignore=ignore_set)
 
     # Parse
-    pyproject: Dict[str, Any] = toml.loads(data)
-    if "build-system" in pyproject:
-        if "requires" in pyproject["build-system"]:
-            pyproject["build-system"]["requires"] = list(
+    parser: ConfigParser = ConfigParser()
+    parser.read_string(data)
+    if ("build-system" in parser) and ("requires" in parser["build-system"]):
+        parser["build-system"]["requires"] = json.dumps(
+            list(
                 map(
                     get_updated_requirement,
-                    pyproject["build-system"]["requires"],
+                    eval(parser["build-system"]["requires"]),
                 )
-            )
-            return toml.dumps(pyproject)
+            ),
+            indent=4,
+        )
+        # Return as a string
+        pyproject_toml_io: IO[str]
+        with StringIO() as pyproject_toml_io:
+            parser.write(pyproject_toml_io)
+            pyproject_toml_io.seek(0)
+            return pyproject_toml_io.read()
     return data
 
 
