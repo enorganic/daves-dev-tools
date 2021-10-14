@@ -1,6 +1,7 @@
 import unittest
 import os
 import tomli
+import sys
 from typing import Iterable
 from configparser import ConfigParser
 from packaging.requirements import Requirement
@@ -45,7 +46,10 @@ def validate_requirement(requirement_string: str) -> None:
         requirement: Requirement = Requirement(requirement_string)
         if requirement.name == "pip":
             assert not requirement.specifier, requirement_string
-        elif requirement.name == "setuptools":
+        elif requirement.name == "setuptools" or (
+            requirement.name == "dataclasses"
+            and sys.version_info[:2] != (3, 6)
+        ):
             list(
                 map(
                     validate_zero_specifier,  # type: ignore
@@ -69,7 +73,8 @@ def validate_requirements(requirements: Iterable[str]) -> None:
 
 class TestRequirementsUpdate(unittest.TestCase):
     """
-    This test case validates functionality for `daves_dev_tools.requirements`
+    This test case validates functionality for
+    `daves_dev_tools.requirements.update`
     """
 
     def test_get_updated_setup_cfg(self) -> None:

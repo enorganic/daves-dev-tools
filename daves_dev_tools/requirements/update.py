@@ -14,7 +14,7 @@ from more_itertools import unique_everseen
 from ..utilities import iter_parse_delimited_values
 from .utilities import (
     normalize_name,
-    _get_installed_distributions,
+    get_installed_distributions,
     is_requirement_string,
     reinstall_editable,
 )
@@ -109,8 +109,12 @@ def _get_updated_requirement_string(
     name: str = normalize_name(requirement.name)
     if name in ignore:
         return requirement_string
-    distribution: Distribution = _get_installed_distributions()[name]
-    _update_requirement_specifiers(requirement, distribution.version)
+    try:
+        distribution: Distribution = get_installed_distributions()[name]
+        _update_requirement_specifiers(requirement, distribution.version)
+    except KeyError:
+        # If the requirement isn't installed, we can't update the version
+        pass
     return str(requirement)
 
 
@@ -291,7 +295,7 @@ def update(
     # Reinstall all editable distributions, excluding those wherein
     # the files being updated live (since there may be invalid requirement
     # specifiers in these files until the updates are performed)
-    reinstall_editable(exclude_paths=path_directories, echo=verbose)
+    reinstall_editable(exclude_locations=path_directories, echo=verbose)
 
     def update_(path: str) -> None:
         _update(path, ignore=ignore, all_extra_name=all_extra_name)
@@ -300,7 +304,7 @@ def update(
     # Reinstall any editable distributions which live in the same
     # directory as the files being updated (and therefore typically belonging
     # to the same project)
-    reinstall_editable(include_paths=path_directories, echo=verbose)
+    reinstall_editable(include_locations=path_directories, echo=verbose)
 
 
 def main() -> None:

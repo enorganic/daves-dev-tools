@@ -1,8 +1,9 @@
 import sys
 import os
 import pipes
-from pkg_resources import Distribution, working_set, safe_name
-from typing import Dict, Iterable, Set, Tuple
+from itertools import chain
+import pkg_resources
+from typing import Dict, Iterable, Set, Tuple, List, IO, Union
 from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from ..utilities import lru_cache, run
@@ -13,19 +14,22 @@ def normalize_name(name: str) -> str:
     """
     Normalize a project/distribution name
     """
-    return safe_name(canonicalize_name(name)).lower()
+    return pkg_resources.safe_name(canonicalize_name(name)).lower()
 
 
 @lru_cache()
-def _get_installed_distributions() -> Dict[str, Distribution]:
-    installed: Dict[str, Distribution] = {}
-    for distribution in working_set:
+def get_installed_distributions() -> Dict[str, pkg_resources.Distribution]:
+    """
+    Return a dictionary of installed distributions.
+    """
+    installed: Dict[str, pkg_resources.Distribution] = {}
+    for distribution in pkg_resources.working_set:
         installed[normalize_name(distribution.project_name)] = distribution
     return installed
 
 
-def get_distribution(name: str) -> Distribution:
-    return _get_installed_distributions()[normalize_name(name)]
+def get_distribution(name: str) -> pkg_resources.Distribution:
+    return get_installed_distributions()[normalize_name(name)]
 
 
 @lru_cache()
@@ -37,6 +41,22 @@ def is_requirement_string(requirement_string: str) -> bool:
     return True
 
 
+def iter_file_requirement_strings(
+    requirement_file: Union[str, IO[str]]
+) -> Iterable[str]:
+    """
+    Read a requirements file and yield the parsed requirements.
+    """
+    lines: List[str]
+    if isinstance(requirement_file, str):
+        requirement_file_io: IO[str]
+        with open(requirement_file) as requirement_file_io:
+            lines = requirement_file_io.readlines()
+    else:
+        lines = requirement_file.read().split("\n")
+    return filter(is_requirement_string, lines)
+
+
 @lru_cache()
 def is_editable(distribution_name: str) -> bool:
     """
@@ -45,7 +65,9 @@ def is_editable(distribution_name: str) -> bool:
     return _distribution_is_editable(get_distribution(distribution_name))
 
 
-def _distribution_is_editable(distribution: Distribution) -> bool:
+def _distribution_is_editable(
+    distribution: pkg_resources.Distribution,
+) -> bool:
     """
     Return `True` if the `distribution` is an editable installation.
     """
@@ -60,28 +82,30 @@ def _distribution_is_editable(distribution: Distribution) -> bool:
 def _iter_editable_distributions(
     include: Set[str],
     exclude: Set[str],
-    include_paths: Set[str],
-    exclude_paths: Set[str],
-) -> Iterable[Distribution]:
+    include_locations: Set[str],
+    exclude_locations: Set[str],
+) -> Iterable[pkg_resources.Distribution]:
     def include_distribution_item(
-        name_distribution: Tuple[str, Distribution]
+        name_distribution: Tuple[str, pkg_resources.Distribution]
     ) -> bool:
         name: str
-        distribution: Distribution
+        distribution: pkg_resources.Distribution
         name, distribution = name_distribution
         if (
             ((not include) or (name in include))
             and ((not exclude) or (name not in exclude))
             and (
-                (not include_paths)
+                (not include_locations)
                 or (
-                    os.path.abspath(distribution.location) not in include_paths
+                    os.path.abspath(distribution.location)
+                    not in include_locations
                 )
             )
             and (
-                (not exclude_paths)
+                (not exclude_locations)
                 or (
-                    os.path.abspath(distribution.location) not in exclude_paths
+                    os.path.abspath(distribution.location)
+                    not in exclude_locations
                 )
             )
         ):
@@ -94,14 +118,14 @@ def _iter_editable_distributions(
             list,
             filter(
                 include_distribution_item,
-                _get_installed_distributions().items(),
+                get_installed_distributions().items(),
             ),
         ),
     )
 
 
 def _reinstall_distribution(
-    distribution: Distribution, echo: bool = False
+    distribution: pkg_resources.Distribution, echo: bool = False
 ) -> None:
     run(
         (
@@ -115,8 +139,8 @@ def _reinstall_distribution(
 def reinstall_editable(
     include: Iterable[str] = (),
     exclude: Iterable[str] = (),
-    include_paths: Iterable[str] = (),
-    exclude_paths: Iterable[str] = (),
+    include_locations: Iterable[str] = (),
+    exclude_locations: Iterable[str] = (),
     echo: bool = False,
 ) -> None:
     """
@@ -128,9 +152,9 @@ def reinstall_editable(
       One or more distribution names to include (excluding all others)
     - exclude ([str])
       One or more distribution names to exclude
-    - include_paths ([str])
+    - include_locations ([str])
       One or more distribution locations to include (excluding all others)
-    - exclude_paths ([str])
+    - exclude_locations ([str])
       One or more distribution locations to exclude
     - echo (bool): If `True`, the "pip install ..." commands are printed to
       `sys.stdout`
@@ -143,24 +167,151 @@ def reinstall_editable(
         exclude = {normalize_name(exclude)}
     else:
         exclude = set(map(normalize_name, exclude))
-    if isinstance(include_paths, str):
-        include_paths = {os.path.abspath(include_paths)}
+    if isinstance(include_locations, str):
+        include_locations = {os.path.abspath(include_locations)}
     else:
-        include_paths = set(map(os.path.abspath, include_paths))
-    if isinstance(exclude_paths, str):
-        exclude_paths = {os.path.abspath(exclude_paths)}
+        include_locations = set(map(os.path.abspath, include_locations))
+    if isinstance(exclude_locations, str):
+        exclude_locations = {os.path.abspath(exclude_locations)}
     else:
-        exclude_paths = set(map(os.path.abspath, exclude_paths))
+        exclude_locations = set(map(os.path.abspath, exclude_locations))
 
-    def reinstall_distribution_(distribution: Distribution) -> None:
+    def reinstall_distribution_(
+        distribution: pkg_resources.Distribution,
+    ) -> None:
         _reinstall_distribution(distribution, echo=echo)
 
     list(
         map(
             reinstall_distribution_,
             _iter_editable_distributions(
-                include, exclude, include_paths, exclude_paths
+                include, exclude, include_locations, exclude_locations
             ),
         )
     )
-    _get_installed_distributions.cache_clear()
+    get_installed_distributions.cache_clear()
+
+
+def get_location_distribution_name(location: str) -> str:
+    """
+    Get a distribution name based on an installation location
+    """
+    return _get_location_distribution_name(os.path.abspath(location))
+
+
+def _get_location_distribution_name(location: str) -> str:
+    def _is_in_location(
+        name_distribution: Tuple[str, pkg_resources.Distribution]
+    ) -> bool:
+        return os.path.abspath(name_distribution[1].location) == location
+
+    def _get_name(
+        name_distribution: Tuple[str, pkg_resources.Distribution]
+    ) -> str:
+        return name_distribution[0]
+
+    return next(
+        map(
+            _get_name,
+            filter(_is_in_location, get_installed_distributions().items()),
+        )
+    )
+
+
+def _get_package_requirement(
+    requirement_string: str,
+) -> pkg_resources.Requirement:
+    try:
+        return pkg_resources.Requirement.parse(requirement_string)
+    except (
+        getattr(
+            pkg_resources, "extern"
+        ).packaging.requirements.InvalidRequirement,
+        getattr(pkg_resources, "RequirementParseError"),
+    ) as error:
+        # Try to parse the requirement as an installation target location,
+        # such as can be used with `pip install`
+        location: str = requirement_string
+        extras: str = ""
+        if "[" in requirement_string and requirement_string.endswith("]"):
+            parts: List[str] = requirement_string.split("[")
+            location = "[".join(parts[:-1])
+            extras = f"[{parts[-1]}"
+        location = os.path.abspath(location)
+        try:
+            name: str = _get_location_distribution_name(location)
+            return pkg_resources.Requirement.parse(f"{name}{extras}")
+        except TypeError:
+            raise error
+
+
+def get_required_distribution_names(
+    requirement_string: str,
+    exclude: Iterable[str] = (),
+    recursive: bool = True,
+) -> Set[str]:
+    """
+    Return a `set` of all distribution names which are required by the
+    distribution specified in `requirement_string`.
+
+    Parameters:
+
+    - requirement_string (str): A distribution name, or a requirement string
+      indicating both a distribution name and extras.
+    - exclude ([str]): The name of one or more distributions to *exclude*
+      from requirements lookup. Please note that excluding a distribution will
+      also halt recursive lookup of requirements for that distribution.
+    - recursive (bool): If `True` (the default), required distributions will
+      be obtained recursively.
+    """
+    if isinstance(exclude, str):
+        exclude = {normalize_name(exclude)}
+    else:
+        exclude = set(map(normalize_name, exclude))
+    return set(
+        _iter_requirement_names(
+            _get_package_requirement(requirement_string),
+            exclude=exclude,
+            recursive=recursive,
+        )
+    )
+
+
+def _get_pkg_requirement_name(requirement: pkg_resources.Requirement) -> str:
+    return normalize_name(requirement.project_name)
+
+
+def _iter_requirement_names(
+    requirement: pkg_resources.Requirement,
+    exclude: Set[str],
+    recursive: bool = True,
+) -> Iterable[str]:
+    project_name: str = normalize_name(requirement.project_name)
+    extras: Set[str] = set(map(normalize_name, requirement.extras))
+    if project_name in exclude:
+        return ()
+    distribution: pkg_resources.Distribution = get_installed_distributions()[
+        project_name
+    ]
+    requirements: List[pkg_resources.Requirement] = distribution.requires(
+        extras=tuple(sorted(extras))
+    )
+
+    def iter_requirement_names_(
+        requirement_: pkg_resources.Requirement,
+    ) -> Iterable[str]:
+        return _iter_requirement_names(
+            requirement_, exclude=exclude, recursive=recursive
+        )
+
+    def not_excluded(name: str) -> bool:
+        return name not in exclude
+
+    requirement_names: Iterable[str] = filter(
+        not_excluded, map(_get_pkg_requirement_name, requirements)
+    )
+    if recursive:
+        requirement_names = chain(
+            requirement_names, *map(iter_requirement_names_, requirements)
+        )
+    return requirement_names

@@ -26,7 +26,7 @@ under which you want your project to reside), then run `make`:
 ```shell script
 cd ~/Code && \
 git clone\
- https://github.com/davebelais/daves-dev-tools.git\
+ https://github.com/enorganic/daves-dev-tools.git\
  daves-dev-tools && \
 cd daves-dev-tools && \
 make
@@ -138,6 +138,25 @@ optional arguments:
                         added/updated to *setup.cfg* (this argument is ignored
                         for *requirements.txt* files)
   -v, --verbose         Echo more verbose output
+```
+
+#### daves-dev-tools requirements freeze
+
+```
+$ daves-dev-tools requirements freeze -h
+usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE] [-r REQUIREMENT] requirement_specifier [requirement_specifier ...]
+
+positional arguments:
+  requirement_specifier
+                        One or more requirement specifiers
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e EXCLUDE, --exclude EXCLUDE
+                        A comma-separated list of distributions to exclude from the output. Please note that excluding a distribution also
+                        excludes any/all requirements which might be recursively discovered for that package.
+  -r REQUIREMENT, --requirement REQUIREMENT
+                        The local file path of a requirements file
 ```
 
 #### daves-dev-tools git download
