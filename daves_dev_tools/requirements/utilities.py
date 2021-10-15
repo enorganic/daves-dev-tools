@@ -8,6 +8,10 @@ from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from ..utilities import lru_cache, run
 
+# This variable tracks the absolute file paths from which a package has been
+# re-installed, in order to avoid performing a reinstall redundantly
+_reinstalled_locations: Set[str] = set()
+
 
 @lru_cache()
 def normalize_name(name: str) -> str:
@@ -134,6 +138,7 @@ def _reinstall_distribution(
         ),
         echo=echo,
     )
+    _reinstalled_locations.add(os.path.abspath(distribution.location))
 
 
 def reinstall_editable(
@@ -175,6 +180,8 @@ def reinstall_editable(
         exclude_locations = {os.path.abspath(exclude_locations)}
     else:
         exclude_locations = set(map(os.path.abspath, exclude_locations))
+    # Don't re-install a location more than once
+    exclude_locations |= _reinstalled_locations
 
     def reinstall_distribution_(
         distribution: pkg_resources.Distribution,
