@@ -21,7 +21,7 @@ from .utilities import (
 
 
 def get_updated_requirement_string(
-    requirement_string: str, ignore: Set[str]
+    requirement_string: str, ignore: Iterable[str] = ()
 ) -> str:
     """
     This function accepts a requirement string, and returns a requirement
@@ -72,17 +72,36 @@ def _update_requirement_specifiers(
             if specifier_version.release is None:
                 updated_specifier_strings.append(f"{specifier.operator}")
             else:
+                greater_or_equal_specificity: bool = len(
+                    specifier_version.release
+                ) >= len(installed_version.release)
                 specifier_version_data: _Version = _Version(
-                    epoch=specifier_version.epoch,
+                    epoch=installed_version.epoch,
                     # Truncate the updated version requirement at the same
                     # level of specificity as the old
                     release=installed_version.release[
                         : len(specifier_version.release)
                     ],
-                    pre=specifier_version.pre,
-                    post=specifier_version.post,
-                    dev=specifier_version.dev,
-                    local=specifier_version.local,
+                    pre=(
+                        installed_version.pre
+                        if greater_or_equal_specificity
+                        else None
+                    ),
+                    post=(
+                        installed_version.post
+                        if greater_or_equal_specificity
+                        else None
+                    ),
+                    dev=(
+                        installed_version.dev
+                        if greater_or_equal_specificity
+                        else None
+                    ),
+                    local=(
+                        installed_version.local
+                        if greater_or_equal_specificity
+                        else None
+                    ),
                 )
                 version_string: str = Version.__str__(
                     specifier_version_data  # type: ignore
