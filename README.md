@@ -117,27 +117,18 @@ optional arguments:
 #### daves-dev-tools requirements update
 
 ```
-$ daves-dev-tools requirements update -h
-usage: daves-dev-tools requirements update [-h] [-i IGNORE]
-                                           [-aen ALL_EXTRA_NAME]
-                                           path [path ...]
+$ daves-dev-tools requirements update -hrequirements freeze [-h] [-e EXCLUDE] requirement [requirement ...]
 
 positional arguments:
-  path                  One or more local paths to a *setup.cfg* and/or
-                        *requirements.txt* file
+  requirement           One or more requirement specifiers or configuration file paths
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i IGNORE, --ignore IGNORE
-                        A comma-separated list of distributions to ignore
-                        (leave any requirements pertaining to the package as-
-                        is)
-  -aen ALL_EXTRA_NAME, --all-extra-name ALL_EXTRA_NAME
-                        If provided, an extra which consolidates the
-                        requirements for all other extras will be
-                        added/updated to *setup.cfg* (this argument is ignored
-                        for *requirements.txt* files)
-  -v, --verbose         Echo more verbose output
+  -e EXCLUDE, --exclude EXCLUDE
+                        A comma-separated list of distributions to exclude from
+                        the output. Please note that excluding a distribution
+                        also excludes any/all requirements which might be
+                        recursively discovered for that package.
 ```
 
 #### daves-dev-tools requirements freeze
