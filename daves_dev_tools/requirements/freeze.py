@@ -18,6 +18,7 @@ from ..utilities import iter_parse_delimited_values
 def get_frozen_requirements(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
+    exclude_recursive: Iterable[str] = (),
 ) -> Tuple[str, ...]:
     """
     Get the (frozen) requirements for one or more specified distributions or
@@ -28,8 +29,9 @@ def get_frozen_requirements(
     - requirements ([str]): One or more requirement specifiers (for example:
       "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
       to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
-    - exclude ([str]): One or more distributions to exclude/ignore.
-      Note: Excluding a distribution excludes all requirements which would
+    - exclude ([str]): One or more distributions to exclude/ignore
+    - exclude_recursive ([str]): One or more distributions to exclude/ignore.
+      Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
     """
@@ -57,12 +59,15 @@ def get_frozen_requirements(
                     )
                 ),
                 exclude=set(
-                    map(
-                        get_requirement_string_distribution_name,
-                        requirement_strings,
+                    chain(
+                        map(
+                            get_requirement_string_distribution_name,
+                            requirement_strings,
+                        ),
+                        map(normalize_name, exclude),
                     )
                 ),
-                exclude_recursive=set(map(normalize_name, exclude)),
+                exclude_recursive=set(map(normalize_name, exclude_recursive)),
             ),
             key=lambda name: name.lower(),
         )
@@ -115,6 +120,7 @@ def _iter_frozen_requirements(
 def freeze(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
+    exclude_recursive: Iterable[str] = (),
 ) -> None:
     """
     Print the (frozen) requirements for one or more specified requirements or
@@ -125,8 +131,9 @@ def freeze(
     - requirements ([str]): One or more requirement specifiers (for example:
       "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
       to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
-    - exclude ([str]): One or more distributions to exclude/ignore.
-      Note: Excluding a distribution excludes all requirements which would
+    - exclude ([str]): One or more distributions to exclude/ignore
+    - exclude_recursive ([str]): One or more distributions to exclude/ignore.
+      Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
     """
@@ -135,6 +142,7 @@ def freeze(
             get_frozen_requirements(
                 requirements=requirements,
                 exclude=exclude,
+                exclude_recursive=exclude_recursive,
             )
         )
     )
@@ -158,15 +166,28 @@ def main() -> None:
         action="append",
         help=(
             "A comma-separated list of distributions to exclude from the "
-            "output. Please note that excluding a distribution also excludes "
-            "any/all requirements which might be recursively discovered "
-            "for that package."
+            "output"
+        ),
+    )
+    parser.add_argument(
+        "-er",
+        "--exclude-recursive",
+        default=[],
+        type=str,
+        action="append",
+        help=(
+            "A comma-separated list of distributions to exclude from the "
+            "output, along with any/all requirements which might have been "
+            "recursively discovered for these packages"
         ),
     )
     arguments: argparse.Namespace = parser.parse_args()
     freeze(
         requirements=arguments.requirement,
         exclude=tuple(iter_parse_delimited_values(arguments.exclude)),
+        exclude_recursive=tuple(
+            iter_parse_delimited_values(arguments.exclude_recursive)
+        ),
     )
 
 
