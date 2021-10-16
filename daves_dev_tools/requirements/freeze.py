@@ -1,51 +1,66 @@
 import pkg_resources
 import argparse
 from itertools import chain
-from typing import Iterable, Dict, Tuple, Union, IO, Set
+from typing import Iterable, Dict, Tuple, Set
+from more_itertools import unique_everseen
 from .utilities import (
     get_required_distribution_names,
     get_installed_distributions,
-    iter_file_requirement_strings,
+    iter_configuration_file_requirement_strings,
     reinstall_editable,
     get_requirement_string_distribution_name,
     normalize_name,
+    is_configuration_file,
 )
 from ..utilities import iter_parse_delimited_values
 
 
 def get_frozen_requirements(
-    requirement_strings: Iterable[str] = (),
-    requirement_files: Iterable[Union[str, IO[str]]] = (),
+    requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
 ) -> Tuple[str, ...]:
     """
-    Get the (pinned) requirements for one or more packages/requirements.
+    Get the (frozen) requirements for one or more specified distributions or
+    configuration files.
 
     Parameters:
 
-    - requirement_strings ([str])
-    - requirement_files ([str|typing.IO]): File paths or file objects
-      representing requirements files
+    - requirements ([str]): One or more requirement specifiers (for example:
+      "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
+      to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
     - exclude ([str]): One or more distributions to exclude/ignore.
       Note: Excluding a distribution excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
     """
+    # Separate requirement strings from requirement files
+    if isinstance(requirements, str):
+        requirements = {requirements}
+    else:
+        requirements = set(requirements)
+    requirement_files: Set[str] = set(
+        filter(is_configuration_file, requirements)
+    )
+    requirement_strings: Set[str] = requirements - requirement_files
     reinstall_editable()
-    if isinstance(requirement_strings, str):
-        requirement_strings = (requirement_strings,)
-    if isinstance(requirement_files, (str, IO)):
-        requirement_files = (requirement_files,)
     name: str
     return tuple(
         sorted(
             _iter_frozen_requirements(
-                chain(
-                    requirement_strings,
-                    *map(iter_file_requirement_strings, requirement_files),
+                unique_everseen(
+                    chain(
+                        requirement_strings,
+                        *map(
+                            iter_configuration_file_requirement_strings,
+                            requirement_files,
+                        ),
+                    )
                 ),
                 exclude=set(
-                    map(get_requirement_string_distribution_name, exclude)
+                    map(
+                        get_requirement_string_distribution_name,
+                        requirement_strings,
+                    )
                 ),
                 exclude_recursive=set(map(normalize_name, exclude)),
             ),
@@ -86,24 +101,39 @@ def _iter_frozen_requirements(
             required_distribution_names.add(name)
         return required_distribution_names
 
+    def not_excluded(name: str) -> bool:
+        return name not in exclude
+
     return map(
         get_requirement_string,
-        set(
-            chain(*map(get_required_distribution_names_, requirement_strings))
+        unique_everseen(
+            chain(*map(get_required_distribution_names_, requirement_strings)),
         ),
     )
 
 
 def freeze(
-    requirement_strings: Iterable[str] = (),
-    requirement_files: Iterable[Union[str, IO[str]]] = (),
+    requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
 ) -> None:
+    """
+    Print the (frozen) requirements for one or more specified requirements or
+    configuration files.
+
+    Parameters:
+
+    - requirements ([str]): One or more requirement specifiers (for example:
+      "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
+      to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
+    - exclude ([str]): One or more distributions to exclude/ignore.
+      Note: Excluding a distribution excludes all requirements which would
+      be identified through recursively.
+      those requirements occur elsewhere.
+    """
     print(
         "\n".join(
             get_frozen_requirements(
-                requirement_strings=requirement_strings,
-                requirement_files=requirement_files,
+                requirements=requirements,
                 exclude=exclude,
             )
         )
@@ -115,10 +145,10 @@ def main() -> None:
         prog="daves-dev-tools requirements freeze"
     )
     parser.add_argument(
-        "requirement_specifier",
+        "requirement",
         nargs="+",
         type=str,
-        help="One or more requirement specifiers",
+        help="One or more requirement specifiers or configuration file paths",
     )
     parser.add_argument(
         "-e",
@@ -133,18 +163,9 @@ def main() -> None:
             "for that package."
         ),
     )
-    parser.add_argument(
-        "-r",
-        "--requirement",
-        default=[],
-        type=str,
-        action="append",
-        help=("The local file path of a requirements file"),
-    )
     arguments: argparse.Namespace = parser.parse_args()
     freeze(
-        requirement_strings=arguments.requirement_specifier,
-        requirement_files=arguments.requirement,
+        requirements=arguments.requirement,
         exclude=tuple(iter_parse_delimited_values(arguments.exclude)),
     )
 

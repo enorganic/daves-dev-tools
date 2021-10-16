@@ -1,11 +1,15 @@
 import sys
 import os
 import pipes
+import tomli
+from configparser import ConfigParser, SectionProxy
+from enum import Enum, auto
 from itertools import chain
 import pkg_resources
-from typing import Dict, Iterable, Set, Tuple, List, IO, Union, Callable
+from typing import Dict, Iterable, Set, Tuple, List, IO, Union, Callable, Any
 from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
+from more_itertools import unique_everseen
 from ..utilities import lru_cache, run
 
 # This variable tracks the absolute file paths from which a package has been
@@ -19,6 +23,41 @@ def normalize_name(name: str) -> str:
     Normalize a project/distribution name
     """
     return pkg_resources.safe_name(canonicalize_name(name)).lower()
+
+
+class ConfigurationFileType(Enum):
+
+    REQUIREMENTS_TXT = auto()
+    SETUP_CFG = auto()
+    TOX_INI = auto()
+    PYPROJECT_TOML = auto()
+
+
+@lru_cache()
+def get_configuration_file_type(path: str) -> ConfigurationFileType:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(path)
+    basename: str = os.path.basename(path).lower()
+    if basename == "setup.cfg":
+        return ConfigurationFileType.SETUP_CFG
+    elif basename == "tox.ini":
+        return ConfigurationFileType.TOX_INI
+    elif basename == "pyproject.toml":
+        return ConfigurationFileType.PYPROJECT_TOML
+    elif basename.endswith(".txt"):
+        return ConfigurationFileType.REQUIREMENTS_TXT
+    else:
+        raise ValueError(
+            f"{path} is not a recognized type of configuration file."
+        )
+
+
+def is_configuration_file(path: str) -> bool:
+    try:
+        get_configuration_file_type(path)
+    except (FileNotFoundError, ValueError):
+        return False
+    return True
 
 
 @lru_cache()
@@ -56,20 +95,86 @@ def is_requirement_string(requirement_string: str) -> bool:
     return True
 
 
-def iter_file_requirement_strings(
-    requirement_file: Union[str, IO[str]]
-) -> Iterable[str]:
-    """
-    Read a requirements file and yield the parsed requirements.
-    """
+def _iter_file_requirement_strings(path: str) -> Iterable[str]:
     lines: List[str]
-    if isinstance(requirement_file, str):
-        requirement_file_io: IO[str]
-        with open(requirement_file) as requirement_file_io:
-            lines = requirement_file_io.readlines()
-    else:
-        lines = requirement_file.read().split("\n")
+    requirement_file_io: IO[str]
+    with open(path) as requirement_file_io:
+        lines = requirement_file_io.readlines()
     return filter(is_requirement_string, lines)
+
+
+def _iter_setup_cfg_requirement_strings(path: str) -> Iterable[str]:
+    parser: ConfigParser = ConfigParser()
+    parser.read(path)
+    requirement_strings: Iterable[str] = ()
+    if ("options" in parser) and ("install_requires" in parser["options"]):
+        requirement_strings = chain(
+            requirement_strings,
+            filter(
+                is_requirement_string,
+                parser["options"]["install_requires"].split("\n"),
+            ),
+        )
+    if "options.extras_require" in parser:
+        extras_require: SectionProxy = parser["options.extras_require"]
+        extra_requirements_string: str
+        for extra_requirements_string in extras_require.values():
+            requirement_strings = chain(
+                requirement_strings,
+                filter(
+                    is_requirement_string,
+                    extra_requirements_string.split("\n"),
+                ),
+            )
+    return unique_everseen(requirement_strings)
+
+
+def _iter_tox_ini_requirement_strings(path: str) -> Iterable[str]:
+    parser: ConfigParser = ConfigParser()
+    parser.read(path)
+
+    def get_section_deps(section_name: str) -> Iterable[str]:
+        if parser.has_option(section_name, "deps"):
+            return filter(
+                is_requirement_string,
+                parser.get(section_name, "deps").split("\n"),
+            )
+        return ()
+
+    return unique_everseen(
+        chain(("tox",), *map(get_section_deps, parser.sections()))
+    )
+
+
+def _iter_pyproject_toml_requirement_strings(path: str) -> Iterable[str]:
+    pyproject_io: IO[str]
+    with open(path) as pyproject_io:
+        pyproject: Dict[str, Any] = tomli.loads(pyproject_io.read())
+        if ("build-system" in pyproject) and (
+            "requires" in pyproject["build-system"]
+        ):
+            return pyproject["build-system"]["requires"]
+    return ()
+
+
+def iter_configuration_file_requirement_strings(path: str) -> Iterable[str]:
+    """
+    Read a configuration file and yield the parsed requirements.
+    """
+    configuration_file_type: ConfigurationFileType = (
+        get_configuration_file_type(path)
+    )
+    if configuration_file_type == ConfigurationFileType.SETUP_CFG:
+        return _iter_setup_cfg_requirement_strings(path)
+    elif configuration_file_type == ConfigurationFileType.PYPROJECT_TOML:
+        return _iter_pyproject_toml_requirement_strings(path)
+    elif configuration_file_type == ConfigurationFileType.TOX_INI:
+        return _iter_tox_ini_requirement_strings(path)
+    else:
+        assert (
+            configuration_file_type == ConfigurationFileType.REQUIREMENTS_TXT
+        )
+        return _iter_file_requirement_strings(path)
 
 
 @lru_cache()
