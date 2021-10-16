@@ -7,6 +7,8 @@ from .utilities import (
     get_installed_distributions,
     iter_file_requirement_strings,
     reinstall_editable,
+    get_requirement_string_distribution_name,
+    normalize_name,
 )
 from ..utilities import iter_parse_delimited_values
 
@@ -42,7 +44,10 @@ def get_frozen_requirements(
                     requirement_strings,
                     *map(iter_file_requirement_strings, requirement_files),
                 ),
-                exclude=exclude,
+                exclude=set(
+                    map(get_requirement_string_distribution_name, exclude)
+                ),
+                exclude_recursive=set(map(normalize_name, exclude)),
             ),
             key=lambda name: name.lower(),
         )
@@ -50,7 +55,9 @@ def get_frozen_requirements(
 
 
 def _iter_frozen_requirements(
-    requirement_strings: Iterable[str], exclude: Iterable[str] = ()
+    requirement_strings: Iterable[str],
+    exclude: Set[str],
+    exclude_recursive: Set[str],
 ) -> Iterable[str]:
     if isinstance(requirement_strings, str):
         requirement_strings = (requirement_strings,)
@@ -65,7 +72,19 @@ def _iter_frozen_requirements(
         return str(distribution.as_requirement())
 
     def get_required_distribution_names_(requirement_string: str) -> Set[str]:
-        return get_required_distribution_names(requirement_string)
+        name: str = get_requirement_string_distribution_name(
+            requirement_string
+        )
+        if name in exclude_recursive:
+            return set()
+        required_distribution_names: Set[
+            str
+        ] = get_required_distribution_names(
+            requirement_string, exclude=exclude_recursive
+        )
+        if name not in exclude:
+            required_distribution_names.add(name)
+        return required_distribution_names
 
     return map(
         get_requirement_string,

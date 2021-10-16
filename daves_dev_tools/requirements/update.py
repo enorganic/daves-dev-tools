@@ -140,10 +140,10 @@ def get_updated_requirements_txt(data: str, ignore: Iterable[str] = ()) -> str:
     """
     ignore_set: Set[str] = _normalize_ignore_argument(ignore)
 
-    def get_updated_requirement(requirement: str) -> str:
+    def get_updated_requirement_string(requirement: str) -> str:
         return _get_updated_requirement_string(requirement, ignore=ignore_set)
 
-    return "\n".join(map(get_updated_requirement, data.split("\n")))
+    return "\n".join(map(get_updated_requirement_string, data.split("\n")))
 
 
 def get_updated_setup_cfg(
@@ -163,7 +163,7 @@ def get_updated_setup_cfg(
     """
     ignore_set: Set[str] = _normalize_ignore_argument(ignore)
 
-    def get_updated_requirement(requirement: str) -> str:
+    def get_updated_requirement_string(requirement: str) -> str:
         return _get_updated_requirement_string(requirement, ignore=ignore_set)
 
     # Parse
@@ -173,7 +173,7 @@ def get_updated_setup_cfg(
     if ("options" in parser) and ("install_requires" in parser["options"]):
         parser["options"]["install_requires"] = "\n".join(
             map(  # type: ignore
-                get_updated_requirement,
+                get_updated_requirement_string,
                 parser["options"]["install_requires"].split("\n"),
             )
         )
@@ -186,7 +186,7 @@ def get_updated_setup_cfg(
         for extra_name, extra_requirements_string in extras_require.items():
             extra_requirements = list(
                 map(
-                    get_updated_requirement,
+                    get_updated_requirement_string,
                     extra_requirements_string.split("\n"),
                 )
             )
@@ -209,6 +209,49 @@ def get_updated_setup_cfg(
         return setup_cfg_io.read()
 
 
+def get_updated_tox_ini(data: str, ignore: Iterable[str] = ()) -> str:
+    """
+    Return the contents of a **tox.ini** file, updated to reflect the
+    currently installed project versions, excluding those specified in
+    `ignore`.
+
+    Parameters:
+
+    - data (str): The contents of a **tox.ini** file
+    - ignore ([str]): One or more project names to leave as-is
+    """
+    ignore_set: Set[str] = _normalize_ignore_argument(ignore)
+
+    def get_updated_requirement_string(requirement: str) -> str:
+        return _get_updated_requirement_string(requirement, ignore=ignore_set)
+
+    # Parse
+    parser: ConfigParser = ConfigParser()
+    parser.read_string(data)
+
+    def update_section(section_name: str) -> None:
+        if parser.has_option(section_name, "deps"):
+            parser.set(
+                section_name,
+                "deps",
+                "\n".join(
+                    map(
+                        get_updated_requirement_string,
+                        parser.get(section_name, "deps").split("\n"),
+                    )
+                ),
+            )
+
+    # Update
+    list(map(update_section, parser.sections()))
+    # Return as a string
+    tox_ini_io: IO[str]
+    with StringIO() as tox_ini_io:
+        parser.write(tox_ini_io)
+        tox_ini_io.seek(0)
+        return tox_ini_io.read()
+
+
 def get_updated_pyproject_toml(
     data: str, ignore: Iterable[str] = (), all_extra_name: str = ""
 ) -> str:
@@ -224,7 +267,7 @@ def get_updated_pyproject_toml(
     """
     ignore_set: Set[str] = _normalize_ignore_argument(ignore)
 
-    def get_updated_requirement(requirement: str) -> str:
+    def get_updated_requirement_string(requirement: str) -> str:
         return _get_updated_requirement_string(requirement, ignore=ignore_set)
 
     # Parse
@@ -233,7 +276,10 @@ def get_updated_pyproject_toml(
         "requires" in pyproject["build-system"]
     ):
         pyproject["build-system"]["requires"] = list(
-            map(get_updated_requirement, pyproject["build-system"]["requires"])
+            map(
+                get_updated_requirement_string,
+                pyproject["build-system"]["requires"],
+            )
         )
         return tomli_w.dumps(pyproject)
     return data
@@ -252,6 +298,8 @@ def _update(
             kwargs["all_extra_name"] = all_extra_name
     elif base_file_name == "pyproject.toml":
         update_function = get_updated_pyproject_toml
+    elif base_file_name == "tox.ini":
+        update_function = get_updated_tox_ini
     else:
         update_function = get_updated_requirements_txt
     kwargs["ignore"] = ignore

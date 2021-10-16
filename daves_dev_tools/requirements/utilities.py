@@ -3,7 +3,7 @@ import os
 import pipes
 from itertools import chain
 import pkg_resources
-from typing import Dict, Iterable, Set, Tuple, List, IO, Union
+from typing import Dict, Iterable, Set, Tuple, List, IO, Union, Callable
 from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from ..utilities import lru_cache, run
@@ -34,6 +34,17 @@ def get_installed_distributions() -> Dict[str, pkg_resources.Distribution]:
 
 def get_distribution(name: str) -> pkg_resources.Distribution:
     return get_installed_distributions()[normalize_name(name)]
+
+
+def get_requirement_distribution_name(requirement: Requirement) -> str:
+    return normalize_name(requirement.name)
+
+
+@lru_cache()
+def get_requirement_string_distribution_name(requirement_string: str) -> str:
+    return get_requirement_distribution_name(
+        get_requirement(requirement_string)
+    )
 
 
 @lru_cache()
@@ -225,12 +236,36 @@ def _get_location_distribution_name(location: str) -> str:
     )
 
 
-def _get_package_requirement(
+def _get_pkg_requirement(
     requirement_string: str,
 ) -> pkg_resources.Requirement:
+    requirement: Union[
+        Requirement, pkg_resources.Requirement
+    ] = _get_requirement(requirement_string, pkg_resources.Requirement.parse)
+    assert isinstance(requirement, pkg_resources.Requirement)
+    return requirement
+
+
+def get_requirement(
+    requirement_string: str,
+) -> Requirement:
+    requirement: Union[
+        Requirement, pkg_resources.Requirement
+    ] = _get_requirement(requirement_string, Requirement)
+    assert isinstance(requirement, Requirement)
+    return requirement
+
+
+def _get_requirement(
+    requirement_string: str,
+    constructor: Callable[
+        [str], Union[Requirement, pkg_resources.Requirement]
+    ],
+) -> Union[Requirement, pkg_resources.Requirement]:
     try:
-        return pkg_resources.Requirement.parse(requirement_string)
+        return constructor(requirement_string)
     except (
+        InvalidRequirement,
         getattr(
             pkg_resources, "extern"
         ).packaging.requirements.InvalidRequirement,
@@ -247,7 +282,7 @@ def _get_package_requirement(
         location = os.path.abspath(location)
         try:
             name: str = _get_location_distribution_name(location)
-            return pkg_resources.Requirement.parse(f"{name}{extras}")
+            return constructor(f"{name}{extras}")
         except TypeError:
             raise error
 
@@ -277,7 +312,7 @@ def get_required_distribution_names(
         exclude = set(map(normalize_name, exclude))
     return set(
         _iter_requirement_names(
-            _get_package_requirement(requirement_string),
+            _get_pkg_requirement(requirement_string),
             exclude=exclude,
             recursive=recursive,
         )
