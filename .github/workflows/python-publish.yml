@@ -35,7 +35,9 @@ jobs:
     - name: Tox
       run: venv/bin/tox -e py
   distribute:
-    needs: test, lint
+    needs:
+      test
+      lint
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
