@@ -97,17 +97,12 @@ def _iter_frozen_requirements(
         )
         if name in exclude_recursive:
             return set()
-        required_distribution_names: Set[
-            str
-        ] = get_required_distribution_names(
-            requirement_string, exclude=exclude_recursive
-        )
-        if name not in exclude:
-            required_distribution_names.add(name)
-        return required_distribution_names
-
-    def not_excluded(name: str) -> bool:
-        return name not in exclude
+        return (
+            get_required_distribution_names(
+                requirement_string, exclude=exclude_recursive
+            )
+            | {name}
+        ) - exclude
 
     return map(
         get_requirement_string,

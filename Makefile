@@ -19,7 +19,8 @@ requirements:
 	 -v\
 	 -aen all\
 	 setup.cfg pyproject.toml tox.ini && \
+	echo 'importlib-metadata' > requirements.txt && \
 	venv/bin/daves-dev-tools requirements freeze\
 	 '.[all]' pyproject.toml tox.ini\
 	 -e importlib-metadata\
-	 > requirements.txt
+	 >> requirements.txt

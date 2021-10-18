@@ -1,3 +1,4 @@
+importlib-metadata
 attrs==21.2.0
 backports.entry-points-selectable==1.1.0
 black==21.9b0
@@ -14,7 +15,6 @@ docutils==0.17.1
 filelock==3.3.1
 flake8==4.0.1
 idna==3.3
-importlib-metadata==4.8.1
 iniconfig==1.1.1
 jmespath==0.10.0
 keyring==23.2.1
