@@ -60,6 +60,17 @@ def is_configuration_file(path: str) -> bool:
     return True
 
 
+def refresh_working_set() -> None:
+    """
+    Force a refresh of all distribution information and clear related caches
+    """
+    get_installed_distributions.cache_clear()
+    is_editable.cache_clear()
+    get_requirement_string_distribution_name.cache_clear()
+    pkg_resources.working_set.entries = []
+    pkg_resources.working_set.__init__()  # type: ignore
+
+
 @lru_cache()
 def get_installed_distributions() -> Dict[str, pkg_resources.Distribution]:
     """
@@ -247,14 +258,18 @@ def _iter_editable_distributions(
 def _reinstall_distribution(
     distribution: pkg_resources.Distribution, echo: bool = False
 ) -> None:
+    _reinstall_location(distribution.location, echo=echo)
+
+
+def _reinstall_location(location: str, echo: bool = False) -> None:
     run(
         (
             f"{pipes.quote(sys.executable)} -m pip install --no-deps "
-            f"-e {pipes.quote(distribution.location)}"
+            f"-e {pipes.quote(location)}"
         ),
         echo=echo,
     )
-    _reinstalled_locations.add(os.path.abspath(distribution.location))
+    _reinstalled_locations.add(os.path.abspath(location))
 
 
 def reinstall_editable(
@@ -312,7 +327,7 @@ def reinstall_editable(
             ),
         )
     )
-    get_installed_distributions.cache_clear()
+    refresh_working_set()
 
 
 def get_location_distribution_name(location: str) -> str:
@@ -322,7 +337,9 @@ def get_location_distribution_name(location: str) -> str:
     return _get_location_distribution_name(os.path.abspath(location))
 
 
-def _get_location_distribution_name(location: str) -> str:
+def _get_location_distribution_name(
+    location: str, _reinstall: bool = True
+) -> str:
     def _is_in_location(
         name_distribution: Tuple[str, pkg_resources.Distribution]
     ) -> bool:
@@ -341,7 +358,12 @@ def _get_location_distribution_name(location: str) -> str:
             )
         )
     except StopIteration:
-        raise ValueError(f"No installation found at {location}")
+        if _reinstall:
+            _reinstall_location(location)
+            refresh_working_set()
+            return _get_location_distribution_name(location, _reinstall=False)
+        else:
+            raise RuntimeError(f"No installation found at {location}")
 
 
 def _get_pkg_requirement(

@@ -65,7 +65,6 @@ def get_ignored_files(
     directory_name: str
     directories_files: Dict[str, Set[str]] = {}
     paths: Set[str]
-    exclude_directory: str
     root_directory = os.path.abspath(root_directory)
     exclude_directories = _absolute_sub_directories(
         root_directory, exclude_directories
@@ -74,7 +73,8 @@ def get_ignored_files(
     path_prefix_length: int = len(path_prefix)
     quoted_root_dir: str = quote(root_directory)
     for path in run(
-        f"git add {quoted_root_dir} && " f"git ls-files -o {quoted_root_dir}"
+        f"git add {quoted_root_dir} && " f"git ls-files -o {quoted_root_dir}",
+        echo=False,
     ).split("\n"):
         path = os.path.abspath(f"./{path}")
         if not _is_excluded(path, exclude_directories):

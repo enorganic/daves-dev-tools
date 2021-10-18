@@ -2,12 +2,12 @@ import argparse
 import sys
 import os
 from pathlib import Path
-from typing import Iterable, IO, List
+from typing import Iterable, IO
 from importlib_metadata import Distribution, PackagePath
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
-    get_installed_distributions,
+    refresh_working_set,
     get_requirement_string_distribution_name,
 )
 from .utilities import run
@@ -27,11 +27,9 @@ def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
 
 
 def _get_distribution_files(project_path: str) -> Iterable[PackagePath]:
-    files: List[PackagePath] = Distribution.from_name(
+    return Distribution.from_name(
         get_requirement_string_distribution_name(project_path)
     ).files
-    print(files)
-    return files
 
 
 def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
@@ -40,7 +38,7 @@ def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
         f"{sys.executable} -m pip install --no-deps -e {project_path}",
         echo=False,
     )
-    get_installed_distributions.cache_clear()
+    refresh_working_set()
 
     def touch_py_typed(path: PackagePath) -> str:
         if os.path.basename(path).lower() == "__init__.py":
