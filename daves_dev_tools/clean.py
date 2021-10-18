@@ -5,9 +5,11 @@ import argparse
 import functools
 import os
 import shutil
+from pipes import quote
 from itertools import chain
 from subprocess import getstatusoutput
 from typing import Any, Callable, Dict, FrozenSet, Iterable, Sequence, Set
+from .utilities import run
 
 ROOT_DIRECTORY: str = "."
 EXCLUDE_DIRECTORIES: FrozenSet[str] = frozenset(
@@ -20,16 +22,6 @@ EXCLUDE_DIRECTORIES: FrozenSet[str] = frozenset(
 )
 
 lru_cache: Callable[..., Any] = functools.lru_cache
-
-
-def _run(command: str) -> str:
-    status: int
-    output: str
-    status, output = getstatusoutput(command)
-    # Create an error if a non-zero exit status is encountered
-    if status:
-        raise OSError(output)
-    return output
 
 
 @lru_cache()
@@ -57,7 +49,7 @@ def _absolute_sub_directories(
 
 
 def get_ignored_files(
-    root_directory: str,
+    root_directory: str = ".",
     exclude_directories: FrozenSet[str] = frozenset(),
 ) -> Iterable[str]:
     """
@@ -81,7 +73,10 @@ def get_ignored_files(
     )
     path_prefix: str = f'{root_directory.rstrip("/")}/'
     path_prefix_length: int = len(path_prefix)
-    for path in _run(f"git ls-files -o '{root_directory}'").split("\n"):
+    quoted_root_dir: str = quote(root_directory)
+    for path in run(
+        f"git add {quoted_root_dir} && " f"git ls-files -o {quoted_root_dir}"
+    ).split("\n"):
         path = os.path.abspath(f"./{path}")
         if not _is_excluded(path, exclude_directories):
             directory_name = ""
@@ -102,7 +97,7 @@ def get_ignored_files(
 
 
 def delete_empty_directories(
-    root_directory: str,
+    root_directory: str = ".",
     exclude_directories: FrozenSet[str] = frozenset(),
     _recurrence: bool = True,
 ) -> int:
@@ -145,7 +140,7 @@ def delete_empty_directories(
 
 
 def delete_ignored(
-    root_directory: str,
+    root_directory: str = ".",
     exclude_directories: FrozenSet[str] = frozenset(),
 ) -> None:
     """

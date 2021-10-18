@@ -333,12 +333,15 @@ def _get_location_distribution_name(location: str) -> str:
     ) -> str:
         return name_distribution[0]
 
-    return next(
-        map(
-            _get_name,
-            filter(_is_in_location, get_installed_distributions().items()),
+    try:
+        return next(
+            map(
+                _get_name,
+                filter(_is_in_location, get_installed_distributions().items()),
+            )
         )
-    )
+    except StopIteration:
+        raise ValueError(f"No installation found at {location}")
 
 
 def _get_pkg_requirement(
