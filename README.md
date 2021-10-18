@@ -150,6 +150,21 @@ optional arguments:
                         The local file path of a requirements file
 ```
 
+#### daves-dev-tools make-typed
+
+```
+$ daves-dev-tools make-typed -h
+usage: daves-dev-tools make-typed [-h] path
+
+Add **/py.typed files and alter the setup.cfg such that a distribution's packages will be identifiable as fully type-hinted
+
+positional arguments:
+  path        A project directory (where the setup.py and/or setup.cfg file are located)
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
 #### daves-dev-tools git download
 
 (WIP)
