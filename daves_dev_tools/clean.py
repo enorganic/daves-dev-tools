@@ -7,7 +7,6 @@ import os
 import shutil
 from pipes import quote
 from itertools import chain
-from subprocess import getstatusoutput
 from typing import Any, Callable, Dict, FrozenSet, Iterable, Sequence, Set
 from .utilities import run
 
