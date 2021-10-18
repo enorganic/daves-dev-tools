@@ -6,7 +6,10 @@ from typing import Iterable, IO, List
 from importlib_metadata import Distribution, PackagePath
 from typing import Tuple
 from configparser import ConfigParser
-from .requirements.utilities import get_requirement_string_distribution_name
+from .requirements.utilities import (
+    get_installed_distributions,
+    get_requirement_string_distribution_name,
+)
 from .utilities import run
 
 
@@ -37,6 +40,7 @@ def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
         f"{sys.executable} -m pip install --no-deps -e {project_path}",
         echo=False,
     )
+    get_installed_distributions.cache_clear()
 
     def touch_py_typed(path: PackagePath) -> str:
         if os.path.basename(path).lower() == "__init__.py":
