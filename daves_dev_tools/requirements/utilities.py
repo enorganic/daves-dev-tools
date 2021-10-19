@@ -10,7 +10,7 @@ from typing import Dict, Iterable, Set, Tuple, List, IO, Union, Callable, Any
 from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from more_itertools import unique_everseen
-from ..utilities import lru_cache, run
+from ..utilities import lru_cache, run, is_site_packages_writable
 
 # This variable tracks the absolute file paths from which a package has been
 # re-installed, in order to avoid performing a reinstall redundantly
@@ -358,7 +358,7 @@ def _get_location_distribution_name(
             )
         )
     except StopIteration:
-        if _reinstall:
+        if _reinstall and is_site_packages_writable():
             _reinstall_location(location)
             refresh_working_set()
             return _get_location_distribution_name(location, _reinstall=False)

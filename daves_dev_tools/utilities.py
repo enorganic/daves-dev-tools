@@ -1,9 +1,16 @@
 import functools
+import os
+from site import getsitepackages
 from itertools import chain
 from subprocess import getstatusoutput
 from typing import Any, Callable, List, Iterable
 
-__all__: List[str] = ["lru_cache", "run"]
+__all__: List[str] = [
+    "lru_cache",
+    "run",
+    "is_site_packages_writable",
+    "iter_parse_delimited_values",
+]
 lru_cache: Callable[..., Any] = functools.lru_cache
 # For backwards compatibility:
 cerberus: Any
@@ -59,3 +66,12 @@ def run(command: str, echo: bool = True) -> str:
         if output and echo:
             print(output)
     return output
+
+
+def _is_directory_writable(path: str) -> bool:
+    return os.access(path, os.W_OK)
+
+
+@lru_cache()
+def is_site_packages_writable() -> bool:
+    return any(map(_is_directory_writable, getsitepackages()))

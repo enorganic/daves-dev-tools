@@ -10,7 +10,7 @@ from .requirements.utilities import (
     refresh_working_set,
     get_requirement_string_distribution_name,
 )
-from .utilities import run
+from .utilities import run, is_site_packages_writable
 
 
 def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
@@ -34,11 +34,12 @@ def _get_distribution_files(project_path: str) -> Iterable[PackagePath]:
 
 def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
     # Re-install the package to ensure our metadata is up-to-date
-    run(
-        f"{sys.executable} -m pip install --no-deps -e {project_path}",
-        echo=False,
-    )
-    refresh_working_set()
+    if is_site_packages_writable():
+        run(
+            f"{sys.executable} -m pip install --no-deps -e {project_path}",
+            echo=False,
+        )
+        refresh_working_set()
 
     def touch_py_typed(path: PackagePath) -> str:
         if os.path.basename(path).lower() == "__init__.py":
