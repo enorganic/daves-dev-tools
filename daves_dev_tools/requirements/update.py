@@ -64,7 +64,7 @@ def _update_requirement_specifiers(
     for specifier in requirement.specifier:  # type: ignore
         # Only update requirement to match our installed version
         # if the requirement is *inclusive*
-        if "=" in specifier.operator:
+        if ("=" in specifier.operator) and ("!" not in specifier.operator):
             specifier_version: Union[Version, LegacyVersion] = parse_version(
                 specifier.version
             )
