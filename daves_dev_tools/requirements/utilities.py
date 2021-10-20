@@ -144,16 +144,29 @@ def _iter_tox_ini_requirement_strings(path: str) -> Iterable[str]:
     parser: ConfigParser = ConfigParser()
     parser.read(path)
 
-    def get_section_deps(section_name: str) -> Iterable[str]:
-        if parser.has_option(section_name, "deps"):
+    def get_section_option_requirements(
+        section_name: str, option_name: str
+    ) -> Iterable[str]:
+        if parser.has_option(section_name, option_name):
             return filter(
                 is_requirement_string,
-                parser.get(section_name, "deps").split("\n"),
+                parser.get(section_name, option_name).split("\n"),
             )
         return ()
 
+    def get_section_requirements(section_name: str) -> Iterable[str]:
+        requirements: Iterable[str] = get_section_option_requirements(
+            section_name, "deps"
+        )
+        if section_name == "tox":
+            requirements = chain(
+                requirements,
+                get_section_option_requirements(section_name, "requires"),
+            )
+        return requirements
+
     return unique_everseen(
-        chain(("tox",), *map(get_section_deps, parser.sections()))
+        chain(("tox",), *map(get_section_requirements, parser.sections()))
     )
 
 

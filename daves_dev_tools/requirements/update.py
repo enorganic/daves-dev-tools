@@ -248,18 +248,23 @@ def get_updated_tox_ini(data: str, ignore: Iterable[str] = ()) -> str:
     parser: ConfigParser = ConfigParser()
     parser.read_string(data)
 
-    def update_section(section_name: str) -> None:
-        if parser.has_option(section_name, "deps"):
+    def update_section_options(section_name: str, option_name: str) -> None:
+        if parser.has_option(section_name, option_name):
             parser.set(
                 section_name,
-                "deps",
+                option_name,
                 "\n".join(
                     map(
                         get_updated_requirement_string,
-                        parser.get(section_name, "deps").split("\n"),
+                        parser.get(section_name, option_name).split("\n"),
                     )
                 ),
             )
+
+    def update_section(section_name: str) -> None:
+        update_section_options(section_name, "deps")
+        if section_name == "tox":
+            update_section_options(section_name, "requires")
 
     # Update
     list(map(update_section, parser.sections()))
