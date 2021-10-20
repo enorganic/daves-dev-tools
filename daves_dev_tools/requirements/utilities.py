@@ -262,14 +262,19 @@ def _reinstall_distribution(
 
 
 def _reinstall_location(location: str, echo: bool = False) -> None:
-    run(
-        (
-            f"{pipes.quote(sys.executable)} -m pip install --no-deps "
-            f"-e {pipes.quote(location)}"
-        ),
-        echo=echo,
-    )
-    _reinstalled_locations.add(os.path.abspath(location))
+    try:
+        run(
+            (
+                f"{pipes.quote(sys.executable)} -m pip install --no-deps "
+                f"-e {pipes.quote(location)}"
+            ),
+            echo=echo,
+        )
+        _reinstalled_locations.add(os.path.abspath(location))
+    except OSError:
+        # If an error code is returned, we just assume package metadata is
+        # up-to-date
+        pass
 
 
 def reinstall_editable(
@@ -359,8 +364,12 @@ def _get_location_distribution_name(
         )
     except StopIteration:
         if _reinstall:
+            previously_reinstalled_locations: int = len(_reinstalled_locations)
             _reinstall_location(location)
-            refresh_working_set()
+            # If the number of re-installed locations increases, we
+            # refresh our working set
+            if len(_reinstalled_locations) > previously_reinstalled_locations:
+                refresh_working_set()
             return _get_location_distribution_name(location, _reinstall=False)
         else:
             raise RuntimeError(f"No installation found at {location}")
