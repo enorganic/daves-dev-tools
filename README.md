@@ -165,6 +165,25 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
+### daves-dev-tools uninstall-all
+
+```
+$ daves-dev-tools uninstall-all -h 
+usage: daves-dev-tools uninstall-all [-h] [-e EXCLUDE] [-dr]
+
+This command will uninstall all distributions installed in the same environment as that from which this command is executed,
+excluding any specified by `--exclude EXCLUDE`
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e EXCLUDE, --exclude EXCLUDE
+                        One or more distribution specifiers, requirement files, setup.cfg files, pyproject.toml files, or
+                        tox.ini files denoting packages to exclude (along with all of their requirements) from those
+                        distributions to be uninstalled
+  -dr, --dry-run        Print, but do not execute, the assembled `pip uninstall` command which, absent this flag, would be
+                        executed
+```
+
 #### daves-dev-tools git download
 
 (WIP)
