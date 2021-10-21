@@ -203,15 +203,16 @@ def get_updated_setup_cfg(
         extra_requirements_string: str
         extra_requirements: List[str]
         for extra_name, extra_requirements_string in extras_require.items():
-            extra_requirements = list(
-                map(
-                    get_updated_requirement_string,
-                    extra_requirements_string.split("\n"),
+            if extra_name != all_extra_name:
+                extra_requirements = list(
+                    map(
+                        get_updated_requirement_string,
+                        extra_requirements_string.split("\n"),
+                    )
                 )
-            )
-            if all_extra_name:
-                all_extra_requirements += extra_requirements
-            extras_require[extra_name] = "\n".join(extra_requirements)
+                if all_extra_name:
+                    all_extra_requirements += extra_requirements
+                extras_require[extra_name] = "\n".join(extra_requirements)
         # If a name was specified for an all-encompasing extra,
         # we de-duplicate and update or create that extra
         if all_extra_name:
