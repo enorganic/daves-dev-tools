@@ -1,7 +1,7 @@
 import sys
 import os
-import pipes
 import tomli
+from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
 from itertools import chain
@@ -66,6 +66,7 @@ def refresh_working_set() -> None:
     """
     get_installed_distributions.cache_clear()
     is_editable.cache_clear()
+    is_installed.cache_clear()
     get_requirement_string_distribution_name.cache_clear()
     pkg_resources.working_set.entries = []
     pkg_resources.working_set.__init__()  # type: ignore
@@ -84,6 +85,11 @@ def get_installed_distributions() -> Dict[str, pkg_resources.Distribution]:
 
 def get_distribution(name: str) -> pkg_resources.Distribution:
     return get_installed_distributions()[normalize_name(name)]
+
+
+@lru_cache()
+def is_installed(distribution_name: str) -> bool:
+    return normalize_name(distribution_name) in get_installed_distributions()
 
 
 def get_requirement_distribution_name(requirement: Requirement) -> str:
@@ -274,20 +280,33 @@ def _reinstall_distribution(
     _reinstall_location(distribution.location, echo=echo)
 
 
-def _reinstall_location(location: str, echo: bool = False) -> None:
+def _reinstall_location(location: str, echo: bool = False) -> bool:
     try:
         run(
             (
-                f"{pipes.quote(sys.executable)} -m pip install --no-deps "
-                f"-e {pipes.quote(location)}"
+                f"{quote(sys.executable)} -m pip install --no-deps "
+                f"-e {quote(location)}"
             ),
             echo=echo,
         )
         _reinstalled_locations.add(os.path.abspath(location))
+        return True
     except OSError:
         # If an error code is returned, we just assume package metadata is
         # up-to-date
-        pass
+        return False
+
+
+def reinstall_location(location: str, echo: bool = False) -> str:
+    """
+    Re-install a distribution at the local file path `location`,
+    and return the distribution name, or "" if no distribution could
+    be found
+    """
+    if _reinstall_location(location, echo):
+        refresh_working_set()
+        return _get_location_distribution_name(location)
+    return ""
 
 
 def reinstall_editable(
@@ -348,16 +367,57 @@ def reinstall_editable(
     refresh_working_set()
 
 
-def get_location_distribution_name(location: str) -> str:
-    """
-    Get a distribution name based on an installation location
-    """
-    return _get_location_distribution_name(os.path.abspath(location))
+def _get_setup_py_distribution_name(path: str) -> str:
+    current_directory: str = os.curdir
+    if os.path.basename(path).lower() == "setup.py":
+        os.chdir(os.path.dirname(path))
+    else:
+        if not os.path.isdir(path):
+            path = os.path.dirname(path)
+        os.chdir(path)
+        path = os.path.join(path, "setup.py")
+    try:
+        name: str = (
+            run(f"{quote(sys.executable)} {quote(path)} --name", echo=False)
+            .strip()
+            .split("\n")[-1]
+        )
+    except OSError:
+        name = ""
+    os.chdir(current_directory)
+    return name
 
 
-def _get_location_distribution_name(
-    location: str, _reinstall: bool = True
-) -> str:
+def _get_setup_cfg_distribution_name(path: str) -> str:
+    if os.path.basename(path).lower() != "setup.cfg":
+        if not os.path.isdir(path):
+            path = os.path.dirname(path)
+        path = os.path.join(path, "setup.cfg")
+    if os.path.isfile(path):
+        parser: ConfigParser = ConfigParser()
+        parser.read(path)
+        if "metadata" in parser:
+            return parser.get("metadata", "name", fallback="")
+    return ""
+
+
+def get_setup_distribution_name(path: str) -> str:
+    """
+    Get a distribution's name from setup.py or setup.cfg
+    """
+    return normalize_name(
+        _get_setup_py_distribution_name(path)
+        or _get_setup_cfg_distribution_name(path)
+    )
+
+
+def _get_location_distribution_name(location: str) -> str:
+    """
+    Get a distribution name based on an installation location, or return
+    an empty string if no distribution can be found
+    """
+    location = os.path.abspath(location)
+
     def _is_in_location(
         name_distribution: Tuple[str, pkg_resources.Distribution]
     ) -> bool:
@@ -376,16 +436,7 @@ def _get_location_distribution_name(
             )
         )
     except StopIteration:
-        if _reinstall:
-            previously_reinstalled_locations: int = len(_reinstalled_locations)
-            _reinstall_location(location)
-            # If the number of re-installed locations increases, we
-            # refresh our working set
-            if len(_reinstalled_locations) > previously_reinstalled_locations:
-                refresh_working_set()
-            return _get_location_distribution_name(location, _reinstall=False)
-        else:
-            raise RuntimeError(f"No installation found at {location}")
+        return get_setup_distribution_name(location)
 
 
 def _get_pkg_requirement(
@@ -422,7 +473,7 @@ def _get_requirement(
             pkg_resources, "extern"
         ).packaging.requirements.InvalidRequirement,
         getattr(pkg_resources, "RequirementParseError"),
-    ) as error:
+    ):
         # Try to parse the requirement as an installation target location,
         # such as can be used with `pip install`
         location: str = requirement_string
@@ -432,11 +483,9 @@ def _get_requirement(
             location = "[".join(parts[:-1])
             extras = f"[{parts[-1]}"
         location = os.path.abspath(location)
-        try:
-            name: str = _get_location_distribution_name(location)
-            return constructor(f"{name}{extras}")
-        except TypeError:
-            raise error
+        name: str = _get_location_distribution_name(location)
+        assert name, f"No distribution found in {location}"
+        return constructor(f"{name}{extras}")
 
 
 def get_required_distribution_names(
@@ -509,3 +558,65 @@ def _iter_requirement_names(
             requirement_names, *map(iter_requirement_names_, requirements)
         )
     return requirement_names
+
+
+def _iter_requirement_strings_required_distribution_names(
+    requirement_strings: Iterable[str],
+) -> Iterable[str]:
+    if isinstance(requirement_strings, str):
+        requirement_strings = (requirement_strings,)
+
+    def get_required_distribution_names_(requirement_string: str) -> Set[str]:
+        try:
+            name: str = get_requirement_string_distribution_name(
+                requirement_string
+            )
+            return get_required_distribution_names(requirement_string) | {name}
+        except KeyError:
+            return set()
+
+    return unique_everseen(
+        chain(*map(get_required_distribution_names_, requirement_strings)),
+    )
+
+
+def get_requirements_required_distribution_names(
+    requirements: Iterable[str] = (),
+) -> Set[str]:
+    """
+    Get the distributions required by one or more specified distributions or
+    configuration files.
+
+    Parameters:
+
+    - requirements ([str]): One or more requirement specifiers (for example:
+      "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
+      to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
+    """
+    # Separate requirement strings from requirement files
+    if isinstance(requirements, str):
+        requirements = {requirements}
+    else:
+        requirements = set(requirements)
+    requirement_files: Set[str] = set(
+        filter(is_configuration_file, requirements)
+    )
+    requirement_strings: Set[str] = requirements - requirement_files
+    reinstall_editable()
+    name: str
+    return set(
+        sorted(
+            _iter_requirement_strings_required_distribution_names(
+                unique_everseen(
+                    chain(
+                        requirement_strings,
+                        *map(
+                            iter_configuration_file_requirement_strings,
+                            requirement_files,
+                        ),
+                    )
+                )
+            ),
+            key=lambda name: name.lower(),
+        )
+    )

@@ -184,10 +184,32 @@ optional arguments:
                         executed
 ```
 
-#### daves-dev-tools git download
+#### daves-dev-tools install-editable
 
-(WIP)
+```
+$ daves-dev-tools install-editable -h
+usage: daves-dev-tools install-editable [-h] [-d DIRECTORY] [-e EXCLUDE] [-edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION] [-dr]
+                                        [requirement [requirement ...]]
 
-#### daves-dev-tools wheel bundle
+This command will attempt to find and install, in develop (editable) mode, all packages which are installed in the current
+python environment. If one or more `requirement` file paths or specifiers are provided, installation will be limited to the
+dependencies identified (recursively) by these requirements. Exclusions can be specified using the `-e` parameter. Directories
+can be excluded by passing regular expressions to the `-edre` parameter.
 
-(WIP)
+positional arguments:
+  requirement           One or more requirement specifiers or configuration file paths. If provided, only dependencies of these
+                        requirements will be installed.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DIRECTORY, --directory DIRECTORY
+                        A directory in which to search for requirements. By default, the directory above the current directory
+                        is searched. This argument may be passed more than once to include multiple locations.
+  -e EXCLUDE, --exclude EXCLUDE
+                        A comma-separated list of distribution names to exclude
+  -edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION, --exclude-directory-regular-expression EXCLUDE_DIRECTORY_REGULAR_EXPRESSION
+                        Directories matching this regular expression will be excluded when searching for setup locations This
+                        argument may be passed more than once to exclude directories matching more than one regular expression.
+                        The default for this argument is equivalent to `-edre '^[.~].*$' -edre '^venv$' -edre '^site-packages$'`
+  -dr, --dry-run        Print, but do not execute, all `pip install` commands
+```

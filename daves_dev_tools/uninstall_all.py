@@ -1,79 +1,12 @@
 import argparse
 import sys
 from itertools import chain
-from typing import Iterable, Set
-from more_itertools import unique_everseen
+from typing import Iterable
 from .requirements.utilities import (
     get_installed_distributions,
-    get_required_distribution_names,
-    iter_configuration_file_requirement_strings,
-    reinstall_editable,
-    get_requirement_string_distribution_name,
-    is_configuration_file,
+    get_requirements_required_distribution_names,
 )
 from .utilities import run
-
-
-def get_requirements_required_distribution_names(
-    requirements: Iterable[str] = (),
-) -> Set[str]:
-    """
-    Get the distributions required by one or more specified distributions or
-    configuration files.
-
-    Parameters:
-
-    - requirements ([str]): One or more requirement specifiers (for example:
-      "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
-      to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
-    """
-    # Separate requirement strings from requirement files
-    if isinstance(requirements, str):
-        requirements = {requirements}
-    else:
-        requirements = set(requirements)
-    requirement_files: Set[str] = set(
-        filter(is_configuration_file, requirements)
-    )
-    requirement_strings: Set[str] = requirements - requirement_files
-    reinstall_editable()
-    name: str
-    return set(
-        sorted(
-            _iter_requirement_strings_required_distribution_names(
-                unique_everseen(
-                    chain(
-                        requirement_strings,
-                        *map(
-                            iter_configuration_file_requirement_strings,
-                            requirement_files,
-                        ),
-                    )
-                )
-            ),
-            key=lambda name: name.lower(),
-        )
-    )
-
-
-def _iter_requirement_strings_required_distribution_names(
-    requirement_strings: Iterable[str],
-) -> Iterable[str]:
-    if isinstance(requirement_strings, str):
-        requirement_strings = (requirement_strings,)
-
-    def get_required_distribution_names_(requirement_string: str) -> Set[str]:
-        try:
-            name: str = get_requirement_string_distribution_name(
-                requirement_string
-            )
-            return get_required_distribution_names(requirement_string) | {name}
-        except KeyError:
-            return set()
-
-    return unique_everseen(
-        chain(*map(get_required_distribution_names_, requirement_strings)),
-    )
 
 
 def uninstall_all(exclude: Iterable[str] = (), dry_run: bool = False) -> None:
