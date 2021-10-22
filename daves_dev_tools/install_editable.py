@@ -2,12 +2,13 @@ import argparse
 import re
 import sys
 import os
+from pkg_resources import Distribution
 from pipes import quote
 from typing import Iterable, Set, List, Tuple, Pattern
 from .requirements.utilities import (
+    get_distribution,
     get_installed_distributions,
     get_requirements_required_distribution_names,
-    is_editable,
     normalize_name,
     get_setup_distribution_name,
     is_installed,
@@ -24,25 +25,24 @@ EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS: Tuple[str, ...] = (
 
 
 def _install_distribution(
-    name: str, directory: str, dry_run: bool = False
+    name: str, directory: str, dry_run: bool, include_extras: bool
 ) -> None:
-    is_installed_: bool = is_installed(name)
-    if is_installed_ and is_editable(name):
-        print(f'"{name}" is already installed in {directory}')
-    else:
-        command: str
-        if is_installed_:
-            command = (
-                f"{quote(sys.executable)} -m pip uninstall "
-                f"-y {quote(name)}"
+    requirement_string: str = directory
+    command: str
+    if is_installed(name) and include_extras:
+        distribution: Distribution = get_distribution(name)
+        if distribution.extras:
+            requirement_string = (
+                f"{requirement_string}" f"[{','.join(distribution.extras)}]"
             )
-        command = (
-            f"{quote(sys.executable)} -m pip install " f"-e {quote(directory)}"
-        )
-        if dry_run:
-            print(command)
-        else:
-            run(command)
+    command = (
+        f"{quote(sys.executable)} -m pip install "
+        f"-e {quote(requirement_string)}"
+    )
+    if dry_run:
+        print(command)
+    else:
+        run(command)
 
 
 def find_and_install_distributions(
@@ -52,6 +52,7 @@ def find_and_install_distributions(
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
     dry_run: bool = False,
+    include_extras: bool = False,
 ) -> None:
     if isinstance(directories, str):
         directories = (directories,)
@@ -80,7 +81,7 @@ def find_and_install_distributions(
         if any(map(_SETUP_NAMES.__contains__, map(str.lower, files))):
             name: str = get_setup_distribution_name(directory)
             if name in distribution_names:
-                _install_distribution(name, directory, dry_run)
+                _install_distribution(name, directory, dry_run, include_extras)
         else:
             list(
                 map(
@@ -100,6 +101,7 @@ def install_editable(
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
     dry_run: bool = False,
+    include_extras: bool = False,
 ) -> None:
     """
     Install, in editable/develop mode, all distributions, except for those
@@ -115,6 +117,9 @@ def install_editable(
       directory is used.
     - exclude ([str]): One or more distributions to pass over when searching
       for distributable projects
+    - exclude_directory_regular_expressions ([str])
+    - dry_run (bool)
+    - include_extras ([str])
     """
     required_distribution_names: Set[str] = (
         get_requirements_required_distribution_names(requirements)
@@ -138,6 +143,7 @@ def install_editable(
             exclude_directory_regular_expressions
         ),
         dry_run=dry_run,
+        include_extras=include_extras,
     )
 
 
@@ -212,7 +218,15 @@ def main() -> None:
         default=False,
         action="store_const",
         const=True,
-        help=("Print, but do not execute, all `pip install` commands"),
+        help="Print, but do not execute, all `pip install` commands",
+    )
+    parser.add_argument(
+        "-ie",
+        "--include-extras",
+        default=False,
+        action="store_const",
+        const=True,
+        help="Install all extras for all discovered distributions",
     )
     arguments: argparse.Namespace = parser.parse_args()
     install_editable(
@@ -223,6 +237,7 @@ def main() -> None:
         ),
         exclude=iter_parse_delimited_values(arguments.exclude),
         dry_run=arguments.dry_run,
+        include_extras=arguments.include_extras,
     )
 
 

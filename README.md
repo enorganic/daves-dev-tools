@@ -189,6 +189,7 @@ optional arguments:
 ```
 $ daves-dev-tools install-editable -h
 usage: daves-dev-tools install-editable [-h] [-d DIRECTORY] [-e EXCLUDE] [-edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION] [-dr]
+                                        [-ie]
                                         [requirement [requirement ...]]
 
 This command will attempt to find and install, in develop (editable) mode, all packages which are installed in the current
@@ -212,4 +213,6 @@ optional arguments:
                         argument may be passed more than once to exclude directories matching more than one regular expression.
                         The default for this argument is equivalent to `-edre '^[.~].*$' -edre '^venv$' -edre '^site-packages$'`
   -dr, --dry-run        Print, but do not execute, all `pip install` commands
+  -ie, --include-extras
+                        Install all extras for all discovered distributions
 ```
