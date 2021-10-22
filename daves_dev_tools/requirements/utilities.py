@@ -1,11 +1,11 @@
 import sys
 import os
 import tomli
+import pkg_resources
 from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
 from itertools import chain
-import pkg_resources
 from typing import Dict, Iterable, Set, Tuple, List, IO, Union, Callable, Any
 from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
@@ -304,7 +304,6 @@ def reinstall_location(location: str, echo: bool = False) -> str:
     be found
     """
     if _reinstall_location(location, echo):
-        refresh_working_set()
         return _get_location_distribution_name(location)
     return ""
 
@@ -411,11 +410,41 @@ def get_setup_distribution_name(path: str) -> str:
     )
 
 
+def _update_location_egg_info(location: str) -> None:
+    setup_py_path: str = os.path.join(location, "setup.py")
+    # If there is no setup.py file, we can't update egg info
+    if not os.path.isfile(setup_py_path):
+        return
+    current_directory: str = os.curdir
+    os.chdir(location)
+    try:
+        run(
+            f"{quote(sys.executable)} {quote(setup_py_path)} egg_info",
+            echo=False,
+        )
+    except OSError:
+        pass
+    os.chdir(current_directory)
+
+
+def get_setup_distribution_requirements(
+    path: str,
+) -> Dict[str, Tuple[str, ...]]:
+    """
+    Get a distribution's name from setup.py or setup.cfg
+    """
+    return normalize_name(
+        _get_setup_py_distribution_name(path)
+        or _get_setup_cfg_distribution_name(path)
+    )
+
+
 def _get_location_distribution_name(location: str) -> str:
     """
     Get a distribution name based on an installation location, or return
     an empty string if no distribution can be found
     """
+    _update_location_egg_info(location)
     location = os.path.abspath(location)
 
     def _is_in_location(
@@ -529,13 +558,16 @@ def _iter_requirement_names(
     exclude: Set[str],
     recursive: bool = True,
 ) -> Iterable[str]:
-    project_name: str = normalize_name(requirement.project_name)
+    name: str = normalize_name(requirement.project_name)
     extras: Set[str] = set(map(normalize_name, requirement.extras))
-    if project_name in exclude:
+    if name in exclude:
         return ()
     distribution: pkg_resources.Distribution = get_installed_distributions()[
-        project_name
+        name
     ]
+    # Ensure requirements are up-to-date
+    if _distribution_is_editable(distribution):
+        _update_location_egg_info(distribution.location)
     requirements: List[pkg_resources.Requirement] = distribution.requires(
         extras=tuple(sorted(extras))
     )
@@ -608,7 +640,6 @@ def get_requirements_required_distribution_names(
         filter(is_configuration_file, requirements)
     )
     requirement_strings: Set[str] = requirements - requirement_files
-    reinstall_editable()
     name: str
     return set(
         sorted(

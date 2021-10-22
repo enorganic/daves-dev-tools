@@ -34,13 +34,17 @@ def uninstall_all(exclude: Iterable[str] = (), dry_run: bool = False) -> None:
             key=lambda name: name.lower(),
         )
     )
-    command: str = (
-        f"{sys.executable} -m pip uninstall -y {uninstall_distribution_names}"
-    )
-    if dry_run:
-        print(command)
+    if uninstall_distribution_names:
+        command: str = (
+            f"{sys.executable} -m "
+            f"pip uninstall -y {uninstall_distribution_names}"
+        )
+        if dry_run:
+            print(command)
+        else:
+            run(command, echo=True)
     else:
-        run(command, echo=True)
+        print("# No distributions found to uninstall")
 
 
 def main() -> None:

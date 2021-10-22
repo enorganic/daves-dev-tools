@@ -7,7 +7,6 @@ from .utilities import (
     get_required_distribution_names,
     get_installed_distributions,
     iter_configuration_file_requirement_strings,
-    reinstall_editable,
     get_requirement_string_distribution_name,
     normalize_name,
     is_configuration_file,
@@ -44,7 +43,6 @@ def get_frozen_requirements(
         filter(is_configuration_file, requirements)
     )
     requirement_strings: Set[str] = requirements - requirement_files
-    reinstall_editable()
     name: str
     return tuple(
         sorted(

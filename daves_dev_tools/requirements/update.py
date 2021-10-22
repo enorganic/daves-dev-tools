@@ -16,7 +16,6 @@ from .utilities import (
     normalize_name,
     get_installed_distributions,
     is_requirement_string,
-    reinstall_editable,
 )
 
 
@@ -361,23 +360,11 @@ def update(
     """
     if isinstance(paths, str):
         paths = (paths,)
-    path_directories: Iterable[str] = map(
-        os.path.abspath,  # type: ignore
-        map(os.path.dirname, paths),  # type: ignore
-    )
-    # Reinstall all editable distributions, excluding those wherein
-    # the files being updated live (since there may be invalid requirement
-    # specifiers in these files until the updates are performed)
-    reinstall_editable(exclude_locations=path_directories, echo=verbose)
 
     def update_(path: str) -> None:
         _update(path, ignore=ignore, all_extra_name=all_extra_name)
 
     list(map(update_, paths))
-    # Reinstall any editable distributions which live in the same
-    # directory as the files being updated (and therefore typically belonging
-    # to the same project)
-    reinstall_editable(include_locations=path_directories, echo=verbose)
 
 
 def main() -> None:
