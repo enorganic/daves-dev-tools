@@ -36,11 +36,9 @@ def _install_distribution(
                 f"{quote(sys.executable)} -m pip uninstall "
                 f"-y {quote(name)}"
             )
-        else:
-            command = (
-                f"{quote(sys.executable)} -m pip install "
-                f"-e {quote(directory)}"
-            )
+        command = (
+            f"{quote(sys.executable)} -m pip install " f"-e {quote(directory)}"
+        )
         if dry_run:
             print(command)
         else:
