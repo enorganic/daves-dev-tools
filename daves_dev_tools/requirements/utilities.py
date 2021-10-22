@@ -563,17 +563,23 @@ def _iter_requirement_names(
 def _iter_requirement_strings_required_distribution_names(
     requirement_strings: Iterable[str],
 ) -> Iterable[str]:
+    visited_requirement_strings: Set[str] = set()
     if isinstance(requirement_strings, str):
         requirement_strings = (requirement_strings,)
 
     def get_required_distribution_names_(requirement_string: str) -> Set[str]:
-        try:
-            name: str = get_requirement_string_distribution_name(
-                requirement_string
-            )
-            return get_required_distribution_names(requirement_string) | {name}
-        except KeyError:
-            return set()
+        if requirement_string not in visited_requirement_strings:
+            try:
+                name: str = get_requirement_string_distribution_name(
+                    requirement_string
+                )
+                visited_requirement_strings.add(requirement_string)
+                return get_required_distribution_names(requirement_string) | {
+                    name
+                }
+            except KeyError:
+                pass
+        return set()
 
     return unique_everseen(
         chain(*map(get_required_distribution_names_, requirement_strings)),
@@ -615,7 +621,7 @@ def get_requirements_required_distribution_names(
                             requirement_files,
                         ),
                     )
-                )
+                ),
             ),
             key=lambda name: name.lower(),
         )

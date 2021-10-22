@@ -128,15 +128,7 @@ def install_editable(
     )
     find_and_install_distributions(
         distribution_names=(
-            set(
-                map(
-                    normalize_name,
-                    get_requirements_required_distribution_names(
-                        required_distribution_names
-                    ),
-                )
-            )
-            - set(map(normalize_name, exclude))
+            required_distribution_names - set(map(normalize_name, exclude))
         ),
         directories=directories,
         exclude_directory_regular_expressions=(
