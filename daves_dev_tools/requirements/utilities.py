@@ -410,7 +410,7 @@ def get_setup_distribution_name(path: str) -> str:
     )
 
 
-def _update_location_egg_info(location: str) -> None:
+def _setup_dist_egg_info(location: str) -> None:
     setup_py_path: str = os.path.join(location, "setup.py")
     # If there is no setup.py file, we can't update egg info
     if not os.path.isfile(setup_py_path):
@@ -419,12 +419,26 @@ def _update_location_egg_info(location: str) -> None:
     os.chdir(location)
     try:
         run(
-            f"{quote(sys.executable)} {quote(setup_py_path)} egg_info",
+            (
+                f"{quote(sys.executable)} {quote(setup_py_path)} -q "
+                "dist_info egg_info"
+            ),
             echo=False,
         )
     except OSError:
         pass
     os.chdir(current_directory)
+
+
+def setup_dist_egg_info(directory: str) -> None:
+    """
+    Refresh dist-info and egg-info for the editable package installed in
+    `directory`
+    """
+    directory = os.path.abspath(directory)
+    if not os.path.isdir(directory):
+        directory = os.path.dirname(directory)
+    return _setup_dist_egg_info(directory)
 
 
 def get_setup_distribution_requirements(
@@ -444,7 +458,7 @@ def _get_location_distribution_name(location: str) -> str:
     Get a distribution name based on an installation location, or return
     an empty string if no distribution can be found
     """
-    _update_location_egg_info(location)
+    _setup_dist_egg_info(location)
     location = os.path.abspath(location)
 
     def _is_in_location(
@@ -567,7 +581,7 @@ def _iter_requirement_names(
     ]
     # Ensure requirements are up-to-date
     if _distribution_is_editable(distribution):
-        _update_location_egg_info(distribution.location)
+        _setup_dist_egg_info(distribution.location)
     requirements: List[pkg_resources.Requirement] = distribution.requires(
         extras=tuple(sorted(extras))
     )

@@ -1,14 +1,12 @@
 import argparse
-import sys
 import os
-from subprocess import call
 from pathlib import Path
 from typing import Iterable, IO
 from importlib_metadata import Distribution, PackagePath
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
-    refresh_working_set,
+    setup_dist_egg_info,
     get_requirement_string_distribution_name,
 )
 
@@ -33,19 +31,8 @@ def _get_distribution_files(project_path: str) -> Iterable[PackagePath]:
 
 
 def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
-    # Attempt to re-install the package to ensure our metadata is up-to-date
-    if not call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "--no-deps",
-            "-e",
-            project_path,
-        ]
-    ):
-        refresh_working_set()
+    # Refresh package metadata
+    setup_dist_egg_info(project_path)
 
     def touch_py_typed(path: PackagePath) -> str:
         if os.path.basename(path).lower() == "__init__.py":
