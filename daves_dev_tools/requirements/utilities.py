@@ -286,17 +286,20 @@ def _iter_editable_distributions(
     )
 
 
-def _reinstall_distribution(
+def _reinstall_editable_distribution(
     distribution: pkg_resources.Distribution, echo: bool = False
-) -> None:
-    _reinstall_location(distribution.location, echo=echo)
+) -> bool:
+    return _reinstall_location(distribution.location, echo=echo)
 
 
-def _reinstall_location(location: str, echo: bool = False) -> bool:
+def _reinstall_location(
+    location: str, user: bool = True, echo: bool = False
+) -> bool:
+    user_flag = "--user " if user else ""
     try:
         run(
             (
-                f"{quote(sys.executable)} -m pip install --no-deps "
+                f"{quote(sys.executable)} -m pip install {user_flag}--no-deps "
                 f"-e {quote(location)}"
             ),
             echo=echo,
@@ -304,9 +307,12 @@ def _reinstall_location(location: str, echo: bool = False) -> bool:
         _reinstalled_locations.add(os.path.abspath(location))
         return True
     except OSError:
-        # If an error code is returned, we just assume package metadata is
-        # up-to-date
-        return False
+        if user:
+            return _reinstall_location(location, user=False, echo=echo)
+        else:
+            # If an error code is returned, we just assume package metadata is
+            # up-to-date
+            return False
 
 
 def reinstall_location(location: str, echo: bool = False) -> str:
@@ -365,7 +371,7 @@ def reinstall_editable(
     def reinstall_distribution_(
         distribution: pkg_resources.Distribution,
     ) -> None:
-        _reinstall_distribution(distribution, echo=echo)
+        _reinstall_editable_distribution(distribution, echo=echo)
 
     list(
         map(
@@ -575,6 +581,73 @@ def _get_pkg_requirement_name(requirement: pkg_resources.Requirement) -> str:
     return normalize_name(requirement.project_name)
 
 
+def install_requirement(
+    requirement: Union[str, Requirement, pkg_resources.Requirement],
+    echo: bool = True,
+) -> None:
+    """
+    Install a requirement
+
+    Parameters:
+
+    - requirement (str)
+    - echo (bool) = True: If `True` (default), the `pip install`
+      commands will be echoed to `sys.stdout`
+    """
+    requirement_string: str = (
+        requirement if isinstance(requirement, str) else str(requirement)
+    )
+    if isinstance(requirement, str):
+        requirement = Requirement(requirement)
+    # Get the distribution name
+    name: str = normalize_name(
+        requirement.name
+        if isinstance(requirement, Requirement)
+        else requirement.project_name
+    )
+    distribution: Optional[pkg_resources.Distribution] = None
+    editable: bool = False
+    try:
+        distribution = get_distribution(name)
+        editable = _distribution_is_editable(distribution)
+    except KeyError:
+        pass
+    # If the requirement is installed and editable, re-install from
+    # the editable location
+    if distribution and editable:
+        # Refresh metadata
+        setup_dist_egg_info(distribution.location)
+        # Assemble a requirement specifier for the editable install
+        requirement_string = distribution.location
+        if requirement.extras:
+            requirement_string = (
+                f"{requirement_string}" f"[{','.join(requirement.extras)}]"
+            )
+    # First attempt a user install, then a system install
+    try:
+        run(
+            (
+                f"{quote(sys.executable)} -m pip install --user "
+                f"{quote(requirement_string)}"
+            ),
+            echo=echo,
+        )
+    except OSError:
+        # If a user installation failed, attempt a system installation
+        run(
+            (
+                f"{quote(sys.executable)} -m pip install "
+                f"{quote(requirement_string)}"
+            ),
+            echo=echo,
+        )
+    # Refresh the metadata
+    if distribution and editable:
+        setup_dist_egg_info(distribution.location)
+    else:
+        refresh_working_set()
+
+
 def _get_pkg_requirement_distribution(
     requirement: pkg_resources.Requirement, name: str, reinstall: bool = True
 ) -> Optional[pkg_resources.Distribution]:
@@ -588,14 +661,8 @@ def _get_pkg_requirement_distribution(
             "attempting to install it now..."
         )
         try:
-            # Attempty to install the requirement...
-            run(
-                (
-                    f"{quote(sys.executable)} -m pip install "
-                    f"{quote(str(requirement))}"
-                ),
-                echo=True,
-            )
+            # Attempt to install the requirement...
+            install_requirement(requirement)
         except OSError:
             return None
         refresh_working_set()

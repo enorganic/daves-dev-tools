@@ -6,6 +6,7 @@ from more_itertools import unique_everseen
 from .utilities import (
     get_required_distribution_names,
     get_installed_distributions,
+    install_requirement,
     iter_configuration_file_requirement_strings,
     get_requirement_string_distribution_name,
     normalize_name,
@@ -84,9 +85,16 @@ def _iter_frozen_requirements(
     ] = get_installed_distributions()
 
     def get_requirement_string(distribution_name: str) -> str:
-        distribution: pkg_resources.Distribution = installed_distributions[
-            distribution_name
-        ]
+        nonlocal installed_distributions
+        distribution: pkg_resources.Distribution
+        try:
+            distribution = installed_distributions[distribution_name]
+        except KeyError:
+            # If the distribution is missing, install it, then refresh the
+            # working set
+            install_requirement(distribution_name)
+            installed_distributions = get_installed_distributions()
+            distribution = installed_distributions[distribution_name]
         return str(distribution.as_requirement())
 
     def get_required_distribution_names_(requirement_string: str) -> Set[str]:
