@@ -7,7 +7,18 @@ from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
 from itertools import chain
-from typing import Dict, Iterable, Set, Tuple, List, IO, Union, Callable, Any
+from typing import (
+    Optional,
+    Dict,
+    Iterable,
+    Set,
+    Tuple,
+    List,
+    IO,
+    Union,
+    Callable,
+    Any,
+)
 from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from more_itertools import unique_everseen
@@ -412,18 +423,14 @@ def get_setup_distribution_name(path: str) -> str:
 
 
 def _setup_dist_egg_info(location: str) -> None:
-    setup_py_path: str = os.path.join(location, "setup.py")
     # If there is no setup.py file, we can't update egg info
-    if not os.path.isfile(setup_py_path):
+    if not os.path.isfile(os.path.join(location, "setup.py")):
         return
     current_directory: str = os.curdir
     os.chdir(location)
     try:
         run(
-            (
-                f"{quote(sys.executable)} {quote(setup_py_path)} -q "
-                "dist_info egg_info"
-            ),
+            (f"{quote(sys.executable)} setup.py -q " "dist_info egg_info"),
             echo=False,
         )
     except OSError:
@@ -568,6 +575,35 @@ def _get_pkg_requirement_name(requirement: pkg_resources.Requirement) -> str:
     return normalize_name(requirement.project_name)
 
 
+def _get_pkg_requirement_distribution(
+    requirement: pkg_resources.Requirement, name: str, reinstall: bool = True
+) -> Optional[pkg_resources.Distribution]:
+    try:
+        return get_installed_distributions()[name]
+    except KeyError:
+        if not reinstall:
+            raise
+        warn(
+            f'The required distribution "{name}" was not installed, '
+            "attempting to install it now..."
+        )
+        try:
+            # Attempty to install the requirement...
+            run(
+                (
+                    f"{quote(sys.executable)} -m pip install "
+                    f"{quote(str(requirement))}"
+                ),
+                echo=True,
+            )
+        except OSError:
+            return None
+        refresh_working_set()
+        return _get_pkg_requirement_distribution(
+            requirement, name, reinstall=False
+        )
+
+
 def _iter_requirement_names(
     requirement: pkg_resources.Requirement,
     exclude: Set[str],
@@ -577,23 +613,11 @@ def _iter_requirement_names(
     extras: Set[str] = set(map(normalize_name, requirement.extras))
     if name in exclude:
         return ()
-    distribution: pkg_resources.Distribution
-    try:
-        distribution = get_installed_distributions()[name]
-    except KeyError:
-        warn(
-            'The distribution "{name}" was not installed, '
-            "attempting to install it now..."
-        )
-        run(
-            (
-                f"{quote(sys.executable)} -m pip install "
-                f"{quote(str(requirement))}"
-            ),
-            echo=True,
-        )
-        refresh_working_set()
-        return _iter_requirement_names(requirement, exclude, recursive)
+    distribution: Optional[
+        pkg_resources.Distribution
+    ] = _get_pkg_requirement_distribution(requirement, name)
+    if distribution is None:
+        return ()
     # Ensure requirements are up-to-date
     if _distribution_is_editable(distribution):
         _setup_dist_egg_info(distribution.location)
@@ -605,11 +629,17 @@ def _iter_requirement_names(
         requirement_: pkg_resources.Requirement,
     ) -> Iterable[str]:
         return _iter_requirement_names(
-            requirement_, exclude=exclude, recursive=recursive
+            requirement_,
+            exclude - {_get_pkg_requirement_name(requirement_)},
+            recursive,
         )
 
     def not_excluded(name: str) -> bool:
-        return name not in exclude
+        if name not in exclude:
+            # Add this to the exclusions
+            exclude.add(name)
+            return True
+        return False
 
     requirement_names: Iterable[str] = filter(
         not_excluded, map(_get_pkg_requirement_name, requirements)
