@@ -2,6 +2,7 @@ import sys
 import os
 import tomli
 import pkg_resources
+from warnings import warn
 from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
@@ -576,9 +577,23 @@ def _iter_requirement_names(
     extras: Set[str] = set(map(normalize_name, requirement.extras))
     if name in exclude:
         return ()
-    distribution: pkg_resources.Distribution = get_installed_distributions()[
-        name
-    ]
+    distribution: pkg_resources.Distribution
+    try:
+        distribution = get_installed_distributions()[name]
+    except KeyError:
+        warn(
+            'The distribution "{name}" was not installed, '
+            "attempting to install it now..."
+        )
+        run(
+            (
+                f"{quote(sys.executable)} -m pip install "
+                f"{quote(str(requirement))}"
+            ),
+            echo=True,
+        )
+        refresh_working_set()
+        return _iter_requirement_names(requirement, exclude, recursive)
     # Ensure requirements are up-to-date
     if _distribution_is_editable(distribution):
         _setup_dist_egg_info(distribution.location)
