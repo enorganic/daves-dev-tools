@@ -3,11 +3,12 @@ import os
 from pathlib import Path
 from typing import Iterable, IO
 from importlib_metadata import Distribution, PackagePath
+from pkg_resources import to_filename
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
     setup_dist_egg_info,
-    get_requirement_string_distribution_name,
+    get_setup_distribution_name,
 )
 
 
@@ -25,9 +26,14 @@ def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
 
 
 def _get_distribution_files(project_path: str) -> Iterable[PackagePath]:
-    return Distribution.from_name(
-        get_requirement_string_distribution_name(project_path)
-    ).files
+    name: str = get_setup_distribution_name(project_path)
+    metadata_path: str = os.path.join(
+        project_path, f"{to_filename(name)}.egg-info"
+    )
+    distribution: Distribution = Distribution.at(metadata_path)
+    if not distribution.files:
+        raise RuntimeError(f"No metadata found at {metadata_path}")
+    return distribution.files
 
 
 def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
