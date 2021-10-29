@@ -8,6 +8,7 @@ from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
 from itertools import chain
+from shutil import rmtree
 from typing import (
     Optional,
     Dict,
@@ -24,6 +25,7 @@ from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from more_itertools import unique_everseen
 from ..utilities import lru_cache, run
+from ..errors import append_exception_text
 
 # This variable tracks the absolute file paths from which a package has been
 # re-installed, in order to avoid performing a reinstall redundantly
@@ -439,6 +441,11 @@ def _setup_egg_info(location: str) -> None:
         f"{quote(sys.executable)} setup.py -q egg_info",
         echo=False,
     )
+    name: str = get_setup_distribution_name(location)
+    dist_info_path: str = os.path.join(
+        location, f"{pkg_resources.to_filename(name)}.dist-info"
+    )
+    rmtree(dist_info_path, ignore_errors=True)
     os.chdir(current_directory)
 
 
@@ -592,11 +599,16 @@ def install_requirement(
     - echo (bool) = True: If `True` (default), the `pip install`
       commands will be echoed to `sys.stdout`
     """
-    requirement_string: str = (
-        requirement if isinstance(requirement, str) else str(requirement)
-    )
     if isinstance(requirement, str):
         requirement = Requirement(requirement)
+    return _install_requirement(requirement, echo)
+
+
+def _install_requirement(
+    requirement: Union[Requirement, pkg_resources.Requirement],
+    echo: bool = True,
+) -> None:
+    requirement_string: str = str(requirement)
     # Get the distribution name
     name: str = normalize_name(
         requirement.name
@@ -619,7 +631,7 @@ def install_requirement(
         requirement_string = distribution.location
         if requirement.extras:
             requirement_string = (
-                f"{requirement_string}" f"[{','.join(requirement.extras)}]"
+                f"{requirement_string}[{','.join(requirement.extras)}]"
             )
     # First attempt a user install, then a system install
     try:
@@ -631,14 +643,20 @@ def install_requirement(
             echo=echo,
         )
     except OSError:
-        # If a user installation failed, attempt a system installation
-        run(
-            (
-                f"{quote(sys.executable)} -m pip install "
-                f"{quote(requirement_string)}"
-            ),
-            echo=echo,
-        )
+        try:
+            # If a user installation failed, attempt a system installation
+            run(
+                (
+                    f"{quote(sys.executable)} -m pip install "
+                    f"{quote(requirement_string)}"
+                ),
+                echo=echo,
+            )
+        except OSError as error:
+            append_exception_text(
+                error, f"Could not install {name} from {requirement_string}"
+            )
+            raise error
     # Refresh the metadata
     if distribution and editable:
         setup_egg_info(distribution.location)
