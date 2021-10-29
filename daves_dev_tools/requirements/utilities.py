@@ -2,6 +2,7 @@ import sys
 import os
 import tomli
 import pkg_resources
+import importlib_metadata
 from warnings import warn
 from pipes import quote
 from configparser import ConfigParser, SectionProxy
@@ -783,3 +784,16 @@ def get_requirements_required_distribution_names(
             key=lambda name: name.lower(),
         )
     )
+
+
+def iter_distribution_location_file_paths(location: str) -> Iterable[str]:
+    name: str = get_setup_distribution_name(location)
+    metadata_path: str = os.path.join(
+        location, f"{pkg_resources.to_filename(name)}.egg-info"
+    )
+    distribution: importlib_metadata.Distribution = (
+        importlib_metadata.Distribution.at(metadata_path)
+    )
+    if not distribution.files:
+        raise RuntimeError(f"No metadata found at {metadata_path}")
+    return map(os.path.abspath, distribution.files)

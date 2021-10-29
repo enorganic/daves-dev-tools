@@ -2,13 +2,11 @@ import argparse
 import os
 from pathlib import Path
 from typing import Iterable, IO
-from importlib_metadata import Distribution, PackagePath
-from pkg_resources import to_filename
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
     setup_dist_egg_info,
-    get_setup_distribution_name,
+    iter_distribution_location_file_paths,
 )
 
 
@@ -25,22 +23,11 @@ def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
     return project_path, setup_cfg_path
 
 
-def _get_distribution_files(project_path: str) -> Iterable[PackagePath]:
-    name: str = get_setup_distribution_name(project_path)
-    metadata_path: str = os.path.join(
-        project_path, f"{to_filename(name)}.egg-info"
-    )
-    distribution: Distribution = Distribution.at(metadata_path)
-    if not distribution.files:
-        raise RuntimeError(f"No metadata found at {metadata_path}")
-    return distribution.files
-
-
 def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
     # Refresh package metadata
     setup_dist_egg_info(project_path)
 
-    def touch_py_typed(path: PackagePath) -> str:
+    def touch_py_typed(path: str) -> str:
         if os.path.basename(path).lower() == "__init__.py":
             py_typed_path: str = os.path.join(
                 os.path.dirname(path), "py.typed"
@@ -52,7 +39,9 @@ def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
 
     return filter(
         None,
-        map(touch_py_typed, _get_distribution_files(project_path)),
+        map(
+            touch_py_typed, iter_distribution_location_file_paths(project_path)
+        ),
     )
 
 
