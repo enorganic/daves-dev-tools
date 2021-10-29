@@ -441,11 +441,6 @@ def _setup_egg_info(location: str) -> None:
         f"{quote(sys.executable)} setup.py -q egg_info",
         echo=False,
     )
-    name: str = get_setup_distribution_name(location)
-    dist_info_path: str = os.path.join(
-        location, f"{pkg_resources.to_filename(name)}.dist-info"
-    )
-    rmtree(dist_info_path, ignore_errors=True)
     os.chdir(current_directory)
 
 
