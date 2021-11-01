@@ -8,7 +8,6 @@ from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
 from itertools import chain
-from shutil import rmtree
 from typing import (
     Optional,
     Dict,
