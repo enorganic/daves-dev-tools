@@ -27,6 +27,7 @@ from more_itertools import unique_everseen
 from ..utilities import lru_cache, run
 from ..errors import append_exception_text
 
+_BUILTIN_DISTRIBUTION_NAMES: Tuple[str] = ("distribute",)
 # This variable tracks the absolute file paths from which a package has been
 # re-installed, in order to avoid performing a reinstall redundantly
 _reinstalled_locations: Set[str] = set()
@@ -662,6 +663,8 @@ def _install_requirement(
 def _get_pkg_requirement_distribution(
     requirement: pkg_resources.Requirement, name: str, reinstall: bool = True
 ) -> Optional[pkg_resources.Distribution]:
+    if name in _BUILTIN_DISTRIBUTION_NAMES:
+        return None
     try:
         return get_installed_distributions()[name]
     except KeyError:
