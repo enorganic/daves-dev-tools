@@ -693,6 +693,9 @@ def _iter_requirement_names(
     extras: Set[str] = set(map(normalize_name, requirement.extras))
     if name in exclude:
         return ()
+    # Ensure we don't follow the same requirement again, causing cyclic
+    # recursion
+    exclude.add(name)
     distribution: Optional[
         pkg_resources.Distribution
     ] = _get_pkg_requirement_distribution(requirement, name)
@@ -704,29 +707,31 @@ def _iter_requirement_names(
     requirements: List[pkg_resources.Requirement] = distribution.requires(
         extras=tuple(sorted(extras))
     )
+    lateral_exclude: Set[str] = set()
 
     def iter_requirement_names_(
         requirement_: pkg_resources.Requirement,
     ) -> Iterable[str]:
         return _iter_requirement_names(
             requirement_,
-            exclude - {_get_pkg_requirement_name(requirement_)},
-            recursive,
+            exclude=(
+                exclude
+                | (lateral_exclude - {_get_pkg_requirement_name(requirement_)})
+            ),
+            recursive=recursive,
         )
 
     def not_excluded(name: str) -> bool:
         if name not in exclude:
             # Add this to the exclusions
-            exclude.add(name)
+            lateral_exclude.add(name)
             return True
         return False
 
-    requirement_names: Iterable[str] = filter(
-        not_excluded, map(_get_pkg_requirement_name, requirements)
-    )
     if recursive:
         requirement_names = chain(
-            requirement_names, *map(iter_requirement_names_, requirements)
+            filter(not_excluded, map(_get_pkg_requirement_name, requirements)),
+            *map(iter_requirement_names_, requirements),
         )
     return requirement_names
 
