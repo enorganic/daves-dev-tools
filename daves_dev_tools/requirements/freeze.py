@@ -90,6 +90,11 @@ def _iter_frozen_requirements(
     ] = get_installed_distributions()
 
     def get_requirement_string(distribution_name: str) -> str:
+        # Don't pin importlib-metadata, as it is part of the standard
+        # library and we should use the version distributed with
+        # python
+        if distribution_name == "importlib-metadata":
+            return distribution_name
         nonlocal installed_distributions
         distribution: pkg_resources.Distribution
         try:
@@ -99,7 +104,13 @@ def _iter_frozen_requirements(
             install_requirement(distribution_name)
             installed_distributions = get_installed_distributions()
             distribution = installed_distributions[distribution_name]
-        return str(distribution.as_requirement())
+        requirement_string: str = str(distribution.as_requirement())
+        # Only include dataclasses for python 3.6
+        if distribution_name == "dataclasses":
+            requirement_string = (
+                f'{requirement_string}; python_version == "3.6"'
+            )
+        return requirement_string
 
     def get_required_distribution_names_(requirement_string: str) -> Set[str]:
         name: str = get_requirement_string_distribution_name(
