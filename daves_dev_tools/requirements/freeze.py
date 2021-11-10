@@ -14,6 +14,11 @@ from .utilities import (
 )
 from ..utilities import iter_parse_delimited_values
 
+_STANDARD_LIBRARY_DISTRIBUTION_NAMES: Set[str] = {
+    "importlib-metadata",
+    "importlib-resources",
+}
+
 
 def get_frozen_requirements(
     requirements: Iterable[str] = (),
@@ -93,7 +98,7 @@ def _iter_frozen_requirements(
         # Don't pin importlib-metadata, as it is part of the standard
         # library and we should use the version distributed with
         # python
-        if distribution_name == "importlib-metadata":
+        if distribution_name in _STANDARD_LIBRARY_DISTRIBUTION_NAMES:
             return distribution_name
         nonlocal installed_distributions
         distribution: pkg_resources.Distribution
