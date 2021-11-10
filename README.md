@@ -135,19 +135,19 @@ optional arguments:
 
 ```
 $ daves-dev-tools requirements freeze -h
-usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE] [-r REQUIREMENT] requirement_specifier [requirement_specifier ...]
+usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE] [-er EXCLUDE_RECURSIVE] [-nv] requirement [requirement ...]
 
 positional arguments:
-  requirement_specifier
-                        One or more requirement specifiers
+  requirement           One or more requirement specifiers or configuration file paths
 
 optional arguments:
   -h, --help            show this help message and exit
   -e EXCLUDE, --exclude EXCLUDE
-                        A comma-separated list of distributions to exclude from the output. Please note that excluding a distribution also
-                        excludes any/all requirements which might be recursively discovered for that package.
-  -r REQUIREMENT, --requirement REQUIREMENT
-                        The local file path of a requirements file
+                        A comma-separated list of distributions to exclude from the output
+  -er EXCLUDE_RECURSIVE, --exclude-recursive EXCLUDE_RECURSIVE
+                        A comma-separated list of distributions to exclude from the output, along with any/all requirements which
+                        might have been recursively discovered for these packages
+  -nv, --no-versions    Don't include versions (only output distribution names)
 ```
 
 #### daves-dev-tools make-typed

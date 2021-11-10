@@ -19,6 +19,7 @@ def get_frozen_requirements(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
     exclude_recursive: Iterable[str] = (),
+    no_versions: bool = False,
 ) -> Tuple[str, ...]:
     """
     Get the (frozen) requirements for one or more specified distributions or
@@ -34,6 +35,8 @@ def get_frozen_requirements(
       Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
+    - no_versions (bool) = False: Exclude version numbers from the output
+      (only return distribution names)
     """
     # Separate requirement strings from requirement files
     if isinstance(requirements, str):
@@ -67,6 +70,7 @@ def get_frozen_requirements(
                     )
                 ),
                 exclude_recursive=set(map(normalize_name, exclude_recursive)),
+                no_versions=no_versions,
             ),
             key=lambda name: name.lower(),
         )
@@ -77,6 +81,7 @@ def _iter_frozen_requirements(
     requirement_strings: Iterable[str],
     exclude: Set[str],
     exclude_recursive: Set[str],
+    no_versions: bool = False,
 ) -> Iterable[str]:
     if isinstance(requirement_strings, str):
         requirement_strings = (requirement_strings,)
@@ -90,8 +95,7 @@ def _iter_frozen_requirements(
         try:
             distribution = installed_distributions[distribution_name]
         except KeyError:
-            # If the distribution is missing, install it, then refresh the
-            # working set
+            # If the distribution is missing, install it
             install_requirement(distribution_name)
             installed_distributions = get_installed_distributions()
             distribution = installed_distributions[distribution_name]
@@ -110,18 +114,19 @@ def _iter_frozen_requirements(
             | {name}
         ) - exclude
 
-    return map(
-        get_requirement_string,
-        unique_everseen(
-            chain(*map(get_required_distribution_names_, requirement_strings)),
-        ),
+    requirements: Iterable[str] = unique_everseen(
+        chain(*map(get_required_distribution_names_, requirement_strings)),
     )
+    if not no_versions:
+        requirements = map(get_requirement_string, requirements)
+    return requirements
 
 
 def freeze(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
     exclude_recursive: Iterable[str] = (),
+    no_versions: bool = False,
 ) -> None:
     """
     Print the (frozen) requirements for one or more specified requirements or
@@ -137,6 +142,8 @@ def freeze(
       Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
+    - no_versions (bool) = False: Exclude version numbers from the output
+      (only print distribution names)
     """
     print(
         "\n".join(
@@ -144,6 +151,7 @@ def freeze(
                 requirements=requirements,
                 exclude=exclude,
                 exclude_recursive=exclude_recursive,
+                no_versions=no_versions,
             )
         )
     )
@@ -182,6 +190,14 @@ def main() -> None:
             "recursively discovered for these packages"
         ),
     )
+    parser.add_argument(
+        "-nv",
+        "--no-versions",
+        default=False,
+        const=True,
+        action="store_const",
+        help="Don't include versions (only output distribution names)",
+    )
     arguments: argparse.Namespace = parser.parse_args()
     freeze(
         requirements=arguments.requirement,
@@ -189,6 +205,7 @@ def main() -> None:
         exclude_recursive=tuple(
             iter_parse_delimited_values(arguments.exclude_recursive)
         ),
+        no_versions=arguments.no_versions,
     )
 
 
