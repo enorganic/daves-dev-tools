@@ -2,10 +2,8 @@ import functools
 import importlib
 import os
 import re
-import runpy
 import sys
 from distutils.core import run_setup
-from itertools import chain
 from time import time
 from types import ModuleType
 from typing import (
@@ -21,7 +19,7 @@ from typing import (
     Union,
 )
 
-from .utilities import run
+from .utilities import run, run_module_as_main
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -129,20 +127,12 @@ def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
 
 
 def _dist(root: str, distributions: FrozenSet[str], echo: bool = True) -> None:
-    argv: List[str] = sys.argv
-    twine_argv: List[str] = list(
-        chain(sys.argv[:1], ["upload"], sys.argv[1:], sorted(distributions))
+    run_module_as_main(
+        "twine",
+        arguments=(["upload"] + sys.argv[1:] + list(sorted(distributions))),
+        directory=root,
+        echo=False,
     )
-    current_directory: str = os.path.curdir
-    os.chdir(root)
-    if echo:
-        print(" ".join(["twine"] + twine_argv[1:]))  # type: ignore
-    try:
-        sys.argv = twine_argv
-        runpy.run_module("twine", run_name="__main__")
-    finally:
-        os.chdir(current_directory)
-        sys.argv = argv
 
 
 def _cleanup(root: str) -> None:

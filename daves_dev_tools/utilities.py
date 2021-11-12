@@ -1,7 +1,11 @@
 import functools
+import runpy
+import sys
+import os
+from pipes import quote
 from itertools import chain
 from subprocess import getstatusoutput
-from typing import Any, Callable, List, Iterable
+from typing import Any, Callable, List, Iterable, Sequence, NoReturn
 
 __all__: List[str] = [
     "lru_cache",
@@ -63,3 +67,56 @@ def run(command: str, echo: bool = True) -> str:
         if output and echo:
             print(output)
     return output
+
+
+def _dummy_sys_exit(__status: object) -> None:
+    return
+
+
+def run_module_as_main(
+    module_name: str,
+    arguments: Sequence[str] = (),
+    directory: str = ".",
+    echo: bool = False,
+) -> None:
+    """
+    This function runs a module as a main entry point, effectively as a CLI,
+    but in the same sub-process as the calling function (thereby retaining
+    all privileges granted to the current sub-process).
+
+    Parameters:
+
+    - module_name (str)
+    - arguments ([str]) = (): The system arguments to pass to this command,
+      replacing `sys.argv` while running the module).
+    - directory (str) = ".": The directory in which the command should
+      be executed (replacing `os.path.curdir` while running the module).
+    - echo (bool) = False: If `True`, an equivalent shell command is printed
+      to sys.stdout.
+    """
+    prior_sys_exit: Callable[[object], NoReturn] = sys.exit
+    prior_sys_argv: List[str] = sys.argv
+    if not isinstance(arguments, list):
+        arguments = list(arguments)
+    command_sys_argv: List[str] = sys.argv[:1] + arguments
+    prior_current_directory: str = os.path.abspath(os.path.curdir)
+    os.chdir(directory)
+    if echo:
+        print(
+            " ".join(
+                map(
+                    quote,
+                    [sys.executable, "-m", module_name] + arguments,
+                )
+            )
+        )
+    try:
+        # Plugging a dummy function into `sys.exit` is necessary to avoid CLI
+        # tools such as pip from ending the current process
+        sys.exit = _dummy_sys_exit  # type: ignore
+        sys.argv = command_sys_argv
+        runpy.run_module(module_name, run_name="__main__")
+    finally:
+        sys.exit = prior_sys_exit  # type: ignore
+        os.chdir(prior_current_directory)
+        sys.argv = prior_sys_argv

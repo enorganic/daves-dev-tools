@@ -13,7 +13,7 @@ from .requirements.utilities import (
     get_setup_distribution_name,
     is_installed,
 )
-from .utilities import run, iter_parse_delimited_values
+from .utilities import iter_parse_delimited_values, run
 
 
 _SETUP_NAMES: Set[str] = {"setup.cfg", "setup.py"}
