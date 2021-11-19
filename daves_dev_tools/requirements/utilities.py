@@ -244,51 +244,6 @@ def _distribution_is_editable(
     return any(map(project_egg_link_exists, sys.path))
 
 
-def _iter_editable_distributions(
-    include: Set[str],
-    exclude: Set[str],
-    include_locations: Set[str],
-    exclude_locations: Set[str],
-) -> Iterable[pkg_resources.Distribution]:
-    def include_distribution_item(
-        name_distribution: Tuple[str, pkg_resources.Distribution]
-    ) -> bool:
-        name: str
-        distribution: pkg_resources.Distribution
-        name, distribution = name_distribution
-        if (
-            ((not include) or (name in include))
-            and ((not exclude) or (name not in exclude))
-            and (
-                (not include_locations)
-                or (
-                    os.path.abspath(distribution.location)
-                    not in include_locations
-                )
-            )
-            and (
-                (not exclude_locations)
-                or (
-                    os.path.abspath(distribution.location)
-                    not in exclude_locations
-                )
-            )
-        ):
-            return _distribution_is_editable(distribution)
-        return False
-
-    return map(
-        list.pop,  # type: ignore
-        map(
-            list,
-            filter(
-                include_distribution_item,
-                get_installed_distributions().items(),
-            ),
-        ),
-    )
-
-
 def _get_setup_py_distribution_name(path: str) -> str:
     current_directory: str = os.curdir
     if os.path.basename(path).lower() == "setup.py":
