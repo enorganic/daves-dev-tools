@@ -6,7 +6,18 @@ from io import StringIO
 from dataclasses import dataclass
 from pkg_resources import Distribution
 from configparser import ConfigParser, SectionProxy
-from typing import Dict, Iterable, IO, List, Callable, Set, Union, Tuple, Any
+from typing import (
+    Dict,
+    Iterable,
+    IO,
+    List,
+    Callable,
+    Set,
+    Union,
+    Tuple,
+    Any,
+    Optional,
+)
 from packaging.specifiers import Specifier, SpecifierSet
 from packaging.requirements import Requirement
 from packaging.version import Version, LegacyVersion, parse as parse_version
@@ -242,7 +253,15 @@ def get_updated_tox_ini(data: str, ignore: Iterable[str] = ()) -> str:
     ignore_set: Set[str] = _normalize_ignore_argument(ignore)
 
     def get_updated_requirement_string(requirement: str) -> str:
-        return _get_updated_requirement_string(requirement, ignore=ignore_set)
+        prefix: Optional[str] = None
+        if ":" in requirement:
+            prefix, requirement = requirement.split(":", maxsplit=1)
+        requirement = _get_updated_requirement_string(
+            requirement, ignore=ignore_set
+        )
+        if prefix is not None:
+            requirement = f"{prefix}: {requirement.lstrip()}"
+        return requirement
 
     # Parse
     parser: ConfigParser = ConfigParser()
