@@ -101,16 +101,16 @@ def run_module_as_main(
     command_sys_argv: List[str] = sys.argv[:1] + arguments
     prior_current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(directory)
-    if echo:
-        print(
-            " ".join(
-                map(
-                    quote,
-                    [sys.executable, "-m", module_name] + arguments,
+    try:
+        if echo:
+            print(
+                " ".join(
+                    map(
+                        quote,
+                        [sys.executable, "-m", module_name] + arguments,
+                    )
                 )
             )
-        )
-    try:
         # Plugging a dummy function into `sys.exit` is necessary to avoid CLI
         # tools such as pip from ending the current process
         sys.exit = _dummy_sys_exit  # type: ignore

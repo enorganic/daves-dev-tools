@@ -55,12 +55,12 @@ def _list_dist(root: str, modified_at_or_after: float = 0.0) -> FrozenSet[str]:
 
 def _setup(root: str) -> FrozenSet[str]:
     start_time: float = time()
-    current_directory: str = os.path.curdir
+    current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(root)
-    abs_setup: str = os.path.join(root, "setup.py")
-    setup_args: List[str] = ["sdist", "bdist_wheel"]
-    print(f'{sys.executable} {abs_setup} {" ".join(setup_args)}')
     try:
+        abs_setup: str = os.path.join(root, "setup.py")
+        setup_args: List[str] = ["sdist", "bdist_wheel"]
+        print(f'{sys.executable} {abs_setup} {" ".join(setup_args)}')
         run_setup(abs_setup, setup_args)
     finally:
         os.chdir(current_directory)
@@ -136,7 +136,7 @@ def _dist(root: str, distributions: FrozenSet[str], echo: bool = True) -> None:
 
 
 def _cleanup(root: str) -> None:
-    current_directory: str = os.path.curdir
+    current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(root)
     try:
         run_setup(os.path.join(root, "setup.py"), ["clean", "--all"])

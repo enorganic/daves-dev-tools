@@ -245,23 +245,27 @@ def _distribution_is_editable(
 
 
 def _get_setup_py_distribution_name(path: str) -> str:
-    current_directory: str = os.curdir
-    if os.path.basename(path).lower() == "setup.py":
-        os.chdir(os.path.dirname(path))
-    else:
-        if not os.path.isdir(path):
-            path = os.path.dirname(path)
-        os.chdir(path)
-        path = os.path.join(path, "setup.py")
+    current_directory: str = os.path.abspath(os.curdir)
     try:
-        name: str = (
-            run(f"{quote(sys.executable)} {quote(path)} --name", echo=False)
-            .strip()
-            .split("\n")[-1]
-        )
-    except OSError:
-        name = ""
-    os.chdir(current_directory)
+        if os.path.basename(path).lower() == "setup.py":
+            os.chdir(os.path.dirname(path))
+        else:
+            if not os.path.isdir(path):
+                path = os.path.dirname(path)
+            os.chdir(path)
+            path = os.path.join(path, "setup.py")
+        try:
+            name: str = (
+                run(
+                    f"{quote(sys.executable)} {quote(path)} --name", echo=False
+                )
+                .strip()
+                .split("\n")[-1]
+            )
+        except OSError:
+            name = ""
+    finally:
+        os.chdir(current_directory)
     return name
 
 
@@ -292,13 +296,15 @@ def _setup_egg_info(location: str) -> None:
     # If there is no setup.py file, we can't update egg info
     if not os.path.isfile(os.path.join(location, "setup.py")):
         return
-    current_directory: str = os.curdir
+    current_directory: str = os.path.abspath(os.curdir)
     os.chdir(location)
-    run(
-        f"{quote(sys.executable)} setup.py -q egg_info",
-        echo=False,
-    )
-    os.chdir(current_directory)
+    try:
+        run(
+            f"{quote(sys.executable)} setup.py -q egg_info",
+            echo=False,
+        )
+    finally:
+        os.chdir(current_directory)
 
 
 def setup_egg_info(directory: str) -> None:
@@ -530,11 +536,8 @@ def _get_pkg_requirement_distribution(
             f'The required distribution "{name}" was not installed, '
             "attempting to install it now..."
         )
-        try:
-            # Attempt to install the requirement...
-            install_requirement(requirement)
-        except OSError:
-            return None
+        # Attempt to install the requirement...
+        install_requirement(requirement)
         refresh_working_set()
         return _get_pkg_requirement_distribution(
             requirement, name, reinstall=False
