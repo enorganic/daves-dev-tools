@@ -3,6 +3,7 @@ import os
 import tomli
 import pkg_resources
 import importlib_metadata
+from collections import deque
 from warnings import warn
 from pipes import quote
 from configparser import ConfigParser, SectionProxy
@@ -292,19 +293,47 @@ def get_setup_distribution_name(path: str) -> str:
     )
 
 
-def _setup_egg_info(location: str) -> None:
+def _setup(arguments: str) -> None:
+    run(
+        f"{quote(sys.executable)} setup.py {arguments}",
+        echo=False,
+    )
+
+
+def _setup_location(location: str, arguments: Iterable[str]) -> None:
     # If there is no setup.py file, we can't update egg info
     if not os.path.isfile(os.path.join(location, "setup.py")):
         return
+    if isinstance(arguments, str):
+        arguments = (arguments,)
     current_directory: str = os.path.abspath(os.curdir)
     os.chdir(location)
     try:
-        run(
-            f"{quote(sys.executable)} setup.py -q egg_info",
-            echo=False,
-        )
+        deque(map(_setup, arguments), maxlen=0)
     finally:
         os.chdir(current_directory)
+
+
+def setup_dist_egg_info(directory: str) -> None:
+    """
+    Refresh dist-info and egg-info for the editable package installed in
+    `directory`
+    """
+    directory = os.path.abspath(directory)
+    if not os.path.isdir(directory):
+        directory = os.path.dirname(directory)
+    return _setup_location(directory, ("-q dist_info", "-q egg_info"))
+
+
+def setup_dist_info(directory: str) -> None:
+    """
+    Refresh dist-info and egg-info for the editable package installed in
+    `directory`
+    """
+    directory = os.path.abspath(directory)
+    if not os.path.isdir(directory):
+        directory = os.path.dirname(directory)
+    return _setup_location(directory, "-q dist_info")
 
 
 def setup_egg_info(directory: str) -> None:
@@ -315,7 +344,7 @@ def setup_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    return _setup_egg_info(directory)
+    return _setup_location(directory, "-q egg_info")
 
 
 def get_setup_distribution_requirements(
@@ -335,7 +364,7 @@ def _get_location_distribution_name(location: str) -> str:
     Get a distribution name based on an installation location, or return
     an empty string if no distribution can be found
     """
-    _setup_egg_info(location)
+    setup_dist_egg_info(location)
     location = os.path.abspath(location)
 
     def _is_in_location(
@@ -484,7 +513,7 @@ def _install_requirement(
     # the editable location
     if distribution and editable:
         # Refresh metadata
-        setup_egg_info(distribution.location)
+        setup_dist_egg_info(distribution.location)
         # Assemble a requirement specifier for the editable install
         requirement_string = distribution.location
         if requirement.extras:
@@ -517,7 +546,7 @@ def _install_requirement(
             raise error
     # Refresh the metadata
     if distribution and editable:
-        setup_egg_info(distribution.location)
+        setup_dist_egg_info(distribution.location)
     else:
         refresh_working_set()
 
@@ -563,7 +592,7 @@ def _iter_requirement_names(
         return ()
     # Ensure requirements are up-to-date
     if _distribution_is_editable(distribution):
-        _setup_egg_info(distribution.location)
+        setup_dist_egg_info(distribution.location)
     requirements: List[pkg_resources.Requirement] = distribution.requires(
         extras=tuple(sorted(extras))
     )
@@ -666,7 +695,7 @@ def get_requirements_required_distribution_names(
 def iter_distribution_location_file_paths(location: str) -> Iterable[str]:
     location = os.path.abspath(location)
     name: str = get_setup_distribution_name(location)
-    setup_egg_info(location)
+    setup_dist_egg_info(location)
     metadata_path: str = os.path.join(
         location, f"{pkg_resources.to_filename(name)}.egg-info"
     )

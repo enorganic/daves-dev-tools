@@ -11,7 +11,7 @@ from .utilities import (
     get_requirement_string_distribution_name,
     normalize_name,
     is_configuration_file,
-    setup_egg_info,
+    setup_dist_egg_info,
     is_editable,
 )
 from ..utilities import iter_parse_delimited_values
@@ -88,7 +88,7 @@ def _reload_distribution(
     distribution: pkg_resources.Distribution,
 ) -> None:
     if is_editable(distribution.project_name):
-        setup_egg_info(distribution.location)
+        setup_dist_egg_info(distribution.location)
         # Clear the distribution information cache
         for cached_property_name in (
             "_pkg_info",

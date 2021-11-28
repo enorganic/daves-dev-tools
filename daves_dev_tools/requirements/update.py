@@ -28,7 +28,7 @@ from .utilities import (
     normalize_name,
     get_installed_distributions,
     is_requirement_string,
-    setup_egg_info,
+    setup_dist_egg_info,
 )
 
 
@@ -148,7 +148,7 @@ def _get_updated_requirement_string(
         pass
     if distribution is not None:
         if is_editable(name):
-            setup_egg_info(distribution.location)
+            setup_dist_egg_info(distribution.location)
         _update_requirement_specifiers(requirement, distribution.version)
     return str(requirement)
 
