@@ -25,7 +25,7 @@ from packaging.utils import canonicalize_name
 from packaging.requirements import InvalidRequirement, Requirement
 from more_itertools import unique_everseen
 from ..utilities import lru_cache, run
-from ..errors import append_exception_text
+from ..errors import append_exception_text, get_exception_text
 
 _BUILTIN_DISTRIBUTION_NAMES: Tuple[str] = ("distribute",)
 # This variable tracks the absolute file paths from which a package has been
@@ -331,7 +331,13 @@ def _reload_distribution_information(
     distribution: pkg_resources.Distribution,
 ) -> pkg_resources.Distribution:
     if _distribution_is_editable(distribution):
-        setup_dist_egg_info(distribution.location)
+        try:
+            setup_dist_egg_info(distribution.location)
+        except OSError:
+            warn(f"Ignoring error: {get_exception_text()}")
+            # If the files can't be overwritten, most likely setup.cfg
+            # can't be either, so don't raise...
+            pass
     # Clear the distribution information cache
     for cached_property_name in (
         "_pkg_info",
