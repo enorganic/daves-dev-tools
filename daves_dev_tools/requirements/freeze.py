@@ -11,8 +11,6 @@ from .utilities import (
     get_requirement_string_distribution_name,
     normalize_name,
     is_configuration_file,
-    setup_dist_egg_info,
-    is_editable,
 )
 from ..utilities import iter_parse_delimited_values
 
@@ -84,25 +82,6 @@ def get_frozen_requirements(
     )
 
 
-def _reload_distribution(
-    distribution: pkg_resources.Distribution,
-) -> None:
-    if is_editable(distribution.project_name):
-        setup_dist_egg_info(distribution.location)
-        # Clear the distribution information cache
-        for cached_property_name in (
-            "_pkg_info",
-            "_key",
-            "_parsed_version",
-            "_version",
-            "__dep_map",
-        ):
-            try:
-                delattr(distribution, cached_property_name)
-            except AttributeError:
-                pass
-
-
 def _iter_frozen_requirements(
     requirement_strings: Iterable[str],
     exclude: Set[str],
@@ -130,7 +109,8 @@ def _iter_frozen_requirements(
             install_requirement(distribution_name)
             installed_distributions = get_installed_distributions()
             distribution = installed_distributions[distribution_name]
-        _reload_distribution(distribution)
+        # TODO: Remove this entirely if proves out
+        # _reload_distribution(distribution)
         requirement_string: str = str(distribution.as_requirement())
         # Only include dataclasses for python 3.6
         if distribution_name == "dataclasses":

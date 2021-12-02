@@ -24,11 +24,9 @@ from packaging.version import Version, LegacyVersion, parse as parse_version
 from more_itertools import unique_everseen
 from ..utilities import iter_parse_delimited_values
 from .utilities import (
-    is_editable,
     normalize_name,
     get_installed_distributions,
     is_requirement_string,
-    setup_dist_egg_info,
 )
 
 
@@ -140,16 +138,12 @@ def _get_updated_requirement_string(
     name: str = normalize_name(requirement.name)
     if name in ignore:
         return requirement_string
-    distribution: Optional[Distribution] = None
     try:
-        distribution = get_installed_distributions()[name]
+        distribution: Distribution = get_installed_distributions()[name]
+        _update_requirement_specifiers(requirement, distribution.version)
     except KeyError:
         # If the requirement isn't installed, we can't update the version
         pass
-    if distribution is not None:
-        if is_editable(name):
-            setup_dist_egg_info(distribution.location)
-        _update_requirement_specifiers(requirement, distribution.version)
     return str(requirement)
 
 

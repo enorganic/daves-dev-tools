@@ -95,6 +95,8 @@ def get_installed_distributions() -> Dict[str, pkg_resources.Distribution]:
     """
     installed: Dict[str, pkg_resources.Distribution] = {}
     for distribution in pkg_resources.working_set:
+        if _distribution_is_editable(distribution):
+            _reload_distribution_information(distribution)
         installed[normalize_name(distribution.project_name)] = distribution
     return installed
 
@@ -325,6 +327,30 @@ def setup_dist_egg_info(directory: str) -> None:
     return _setup_location(directory, ("-q dist_info", "-q egg_info"))
 
 
+def _reload_distribution_information(
+    distribution: pkg_resources.Distribution,
+) -> pkg_resources.Distribution:
+    if _distribution_is_editable(distribution):
+        setup_dist_egg_info(distribution.location)
+    # Clear the distribution information cache
+    for cached_property_name in (
+        "_pkg_info",
+        "_key",
+        "_parsed_version",
+        "_version",
+        "__dep_map",
+    ):
+        try:
+            delattr(distribution, cached_property_name)
+        except AttributeError:
+            pass
+    return distribution
+
+
+def reload_distribution_information(name: str) -> pkg_resources.Distribution:
+    return _reload_distribution_information(get_distribution(name))
+
+
 def setup_dist_info(directory: str) -> None:
     """
     Refresh dist-info and egg-info for the editable package installed in
@@ -364,7 +390,6 @@ def _get_location_distribution_name(location: str) -> str:
     Get a distribution name based on an installation location, or return
     an empty string if no distribution can be found
     """
-    setup_dist_egg_info(location)
     location = os.path.abspath(location)
 
     def _is_in_location(
@@ -512,8 +537,6 @@ def _install_requirement(
     # If the requirement is installed and editable, re-install from
     # the editable location
     if distribution and editable:
-        # Refresh metadata
-        setup_dist_egg_info(distribution.location)
         # Assemble a requirement specifier for the editable install
         requirement_string = distribution.location
         if requirement.extras:
@@ -545,8 +568,8 @@ def _install_requirement(
             )
             raise error
     # Refresh the metadata
-    if distribution and editable:
-        setup_dist_egg_info(distribution.location)
+    if distribution:
+        _reload_distribution_information(distribution)
     else:
         refresh_working_set()
 
@@ -567,7 +590,6 @@ def _get_pkg_requirement_distribution(
         )
         # Attempt to install the requirement...
         install_requirement(requirement)
-        refresh_working_set()
         return _get_pkg_requirement_distribution(
             requirement, name, reinstall=False
         )
@@ -590,9 +612,6 @@ def _iter_requirement_names(
     ] = _get_pkg_requirement_distribution(requirement, name)
     if distribution is None:
         return ()
-    # Ensure requirements are up-to-date
-    if _distribution_is_editable(distribution):
-        setup_dist_egg_info(distribution.location)
     requirements: List[pkg_resources.Requirement] = distribution.requires(
         extras=tuple(sorted(extras))
     )

@@ -5,7 +5,6 @@ from typing import Iterable, IO
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
-    setup_dist_egg_info,
     iter_distribution_location_file_paths,
 )
 
@@ -24,9 +23,6 @@ def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
 
 
 def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
-    # Refresh package metadata
-    setup_dist_egg_info(project_path)
-
     def touch_py_typed(path: str) -> str:
         if os.path.basename(path).lower() == "__init__.py":
             py_typed_path: str = os.path.join(
