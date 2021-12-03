@@ -296,10 +296,13 @@ def get_setup_distribution_name(path: str) -> str:
 
 
 def _setup(arguments: str) -> None:
-    run(
-        f"{quote(sys.executable)} setup.py {arguments}",
-        echo=False,
-    )
+    try:
+        run(
+            f"{quote(sys.executable)} setup.py {arguments}",
+            echo=False,
+        )
+    except Exception:
+        warn(f"Ignoring error: {get_exception_text()}")
 
 
 def _setup_location(location: str, arguments: Iterable[str]) -> None:
@@ -324,20 +327,14 @@ def setup_dist_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    return _setup_location(directory, ("-q dist_info", "-q egg_info"))
+    _setup_location(directory, ("-q dist_info", "-q egg_info"))
 
 
 def _reload_distribution_information(
     distribution: pkg_resources.Distribution,
 ) -> pkg_resources.Distribution:
     if _distribution_is_editable(distribution):
-        try:
-            setup_dist_egg_info(distribution.location)
-        except OSError:
-            warn(f"Ignoring error: {get_exception_text()}")
-            # If the files can't be overwritten, most likely setup.cfg
-            # can't be either, so don't raise...
-            pass
+        setup_dist_egg_info(distribution.location)
     # Clear the distribution information cache
     for cached_property_name in (
         "_pkg_info",
