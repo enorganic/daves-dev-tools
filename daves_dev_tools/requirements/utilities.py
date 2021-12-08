@@ -249,24 +249,32 @@ def _distribution_is_editable(
 
 def _get_setup_py_distribution_name(path: str) -> str:
     current_directory: str = os.path.abspath(os.curdir)
+    directory: str = path
     try:
         if os.path.basename(path).lower() == "setup.py":
-            os.chdir(os.path.dirname(path))
+            directory = os.path.dirname(path)
+            os.chdir(directory)
         else:
             if not os.path.isdir(path):
-                path = os.path.dirname(path)
-            os.chdir(path)
-            path = os.path.join(path, "setup.py")
+                directory = os.path.dirname(path)
+            os.chdir(directory)
+            path = os.path.join(directory, "setup.py")
+        command: str = f"{quote(sys.executable)} {quote(path)} --name"
+        name: str
         try:
-            name: str = (
-                run(
-                    f"{quote(sys.executable)} {quote(path)} --name", echo=False
+            name = run(command, echo=False).strip().split("\n")[-1]
+        except Exception:
+            # re-write distribution and egg information and attempt to
+            # get the name again
+            setup_dist_egg_info(directory)
+            try:
+                run(command, echo=False).strip().split("\n")[-1]
+            except Exception:
+                warn(
+                    f"A package name could not be found in {directory}\n"
+                    f"Error ignored: {get_exception_text()}"
                 )
-                .strip()
-                .split("\n")[-1]
-            )
-        except OSError:
-            name = ""
+                name = ""
     finally:
         os.chdir(current_directory)
     return name
@@ -290,8 +298,8 @@ def get_setup_distribution_name(path: str) -> str:
     Get a distribution's name from setup.py or setup.cfg
     """
     return normalize_name(
-        _get_setup_py_distribution_name(path)
-        or _get_setup_cfg_distribution_name(path)
+        _get_setup_cfg_distribution_name(path)
+        or _get_setup_py_distribution_name(path)
     )
 
 
