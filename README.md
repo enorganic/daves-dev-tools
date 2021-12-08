@@ -56,7 +56,8 @@ optional arguments:
 
 ```
 $ daves-dev-tools distribute -h
-usage: daves-dev-tools distribute [-h] [-r REPOSITORY] [--repository-url REPOSITORY_URL]
+usage: daves-dev-tools distribute [-h] [-cu CERBERUS_URL] [-cp CERBERUS_PATH]
+                    [-r REPOSITORY] [--repository-url REPOSITORY_URL]
                     [-s] [--sign-with SIGN_WITH] [-i IDENTITY] [-u USERNAME]
                     [-p PASSWORD] [--non-interactive] [-c COMMENT]
                     [--config-file CONFIG_FILE] [--skip-existing]
@@ -112,6 +113,15 @@ optional arguments:
   --verbose             Show verbose output.
   --disable-progress-bar
                         Disable the progress bar.
+  -cu CERBERUS_URL, --cerberus-url CERBERUS_URL
+                        The base URL of a Cerberus REST API.
+                        See: https://swoo.sh/3DBW2Vb
+  -cp CERBERUS_PATH, --cerberus-path CERBERUS_PATH
+                        A Cerberus secure data path (including /key) wherein a
+                        password with which to authenticate can be found.
+                        If no USERNAME is provided, the last part of this path
+                        (the secure data path entry key) is inferred as your
+                        username. See: https://swoo.sh/3DBW2Vb
 ```
 
 #### daves-dev-tools requirements update

@@ -76,7 +76,29 @@ def _get_help() -> bool:
     if set(sys.argv) & {"-h", "--help", "-H", "--HELP"}:
         help_: str = run(f"{sys.executable} -m twine upload -h", echo=False)
         help_ = re.sub(
-            r"\btwine upload\b", "daves-dev-tools distribute", help_
+            r"\btwine upload\b( \[-h\])?",
+            (
+                "daves-dev-tools distribute\\1 "
+                "[-cu CERBERUS_URL] [-cp CERBERUS_PATH]\n"
+                "                   "
+            ),
+            help_,
+        )
+        help_ = (
+            f"{help_.rstrip()}\n"
+            "  -cu CERBERUS_URL, --cerberus-url CERBERUS_URL\n"
+            "                        The base URL of a Cerberus REST API.\n"
+            "                        See: https://swoo.sh/3DBW2Vb\n"
+            "  -cp CERBERUS_PATH, --cerberus-path CERBERUS_PATH\n"
+            "                        A Cerberus secure data path (including "
+            "/key) wherein a\n"
+            "                        password with which to authenticate can "
+            "be found.\n"
+            "                        If no USERNAME is provided, the last "
+            "part of this path\n"
+            "                        (the secure data path entry key) is "
+            "inferred as your\n"
+            "                        username. See: https://swoo.sh/3DBW2Vb\n"
         )
         print(help_)
         return True
@@ -93,8 +115,12 @@ def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
         sys.argv, "-u", _argv_pop(sys.argv, "--username")
     )
     password: Optional[str] = None
-    cerberus_url: Optional[str] = _argv_pop(sys.argv, "--cerberus-url")
-    cerberus_path: Optional[str] = _argv_pop(sys.argv, "--cerberus-path")
+    cerberus_url: Optional[str] = _argv_pop(
+        sys.argv, "--cerberus-url", None
+    ) or _argv_pop(sys.argv, "-cu", None)
+    cerberus_path: Optional[str] = _argv_pop(
+        sys.argv, "--cerberus-path", None
+    ) or _argv_pop(sys.argv, "-cp", None)
     if cerberus_url and cerberus_path:
         # Only import the Cerberus utility if/when the "--cerberus-url"
         # and "--cerberus-path" keyword arguments are provided, as the
