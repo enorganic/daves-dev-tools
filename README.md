@@ -23,6 +23,7 @@ one or more *extras*:
 To install this project for development of *this library*,
 clone this repository (replacing "~/Code", below, with the directory
 under which you want your project to reside), then run `make`:
+
 ```shell script
 cd ~/Code && \
 git clone\
@@ -38,7 +39,11 @@ make
 
 #### daves-dev-tools clean
 
-```
+This command removes all files from your project directory which are ignored
+by git, excepting IDE configuration files (".vscode" and ".idea") and
+any explicitly excluded directories (see the CLI help text below).
+
+```shell script
 $ daves-dev-tools clean -h
 usage: daves-dev-tools [-h] [--exclude EXCLUDE] [root]
 
@@ -54,9 +59,11 @@ optional arguments:
 
 #### daves-dev-tools distribute
 
-```
+```text
 $ daves-dev-tools distribute -h
-usage: daves-dev-tools distribute [-h] [-cu CERBERUS_URL] [-cp CERBERUS_PATH]
+usage: daves-dev-tools distribute [-h] [-cu CERBERUS_URL]
+                    [-cup CERBERUS_USERNAME_PATH]
+                    [-cpp CERBERUS_PASSWORD_PATH]
                     [-r REPOSITORY] [--repository-url REPOSITORY_URL]
                     [-s] [--sign-with SIGN_WITH] [-i IDENTITY] [-u USERNAME]
                     [-p PASSWORD] [--non-interactive] [-c COMMENT]
@@ -116,10 +123,15 @@ optional arguments:
   -cu CERBERUS_URL, --cerberus-url CERBERUS_URL
                         The base URL of a Cerberus REST API.
                         See: https://swoo.sh/3DBW2Vb
-  -cp CERBERUS_PATH, --cerberus-path CERBERUS_PATH
+  -cup CERBERUS_USERNAME_PATH, --cerberus-username-path CERBERUS_USERNAME_PATH
+                        A Cerberus secure data path (including /key) wherein a
+                        username with which to authenticate can be found.
+                        See: https://swoo.sh/3DBW2Vb
+  -cpp CERBERUS_PASSWORD_PATH, --cerberus-password-path CERBERUS_PASSWORD_PATH
                         A Cerberus secure data path (including /key) wherein a
                         password with which to authenticate can be found.
-                        If no USERNAME is provided, the last part of this path
+                        If no USERNAME or CERBERUS_USERNAME_PATH is provided,
+                        the last part of this path 
                         (the secure data path entry key) is inferred as your
                         username. See: https://swoo.sh/3DBW2Vb
 ```

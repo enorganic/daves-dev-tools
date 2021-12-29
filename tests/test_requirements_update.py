@@ -15,7 +15,7 @@ from daves_dev_tools.requirements.update import (
 
 
 TEST_PROJECT_DIRECTORY: str = os.path.join(
-    os.path.dirname(__file__), "test_project/"
+    os.path.dirname(__file__), "test_projects/test_project_a/"
 )
 
 
