@@ -43,6 +43,7 @@ def validate_zero_specifier(specifier: Specifier) -> None:
 
 def validate_requirement(requirement_string: str) -> None:
     if requirement_string:
+        print(requirement_string)
         requirement: Requirement = Requirement(requirement_string)
         if requirement.name == "pip":
             assert not requirement.specifier, requirement_string

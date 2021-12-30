@@ -477,6 +477,7 @@ def get_required_distribution_names(
     requirement_string: str,
     exclude: Iterable[str] = (),
     recursive: bool = True,
+    echo: bool = False,
 ) -> Set[str]:
     """
     Return a `set` of all distribution names which are required by the
@@ -491,6 +492,8 @@ def get_required_distribution_names(
       also halt recursive lookup of requirements for that distribution.
     - recursive (bool): If `True` (the default), required distributions will
       be obtained recursively.
+    - echo (bool) = False: If `True`, commands and responses executed in
+      subprocesses will be printed to `sys.stdout`
     """
     if isinstance(exclude, str):
         exclude = {normalize_name(exclude)}
@@ -501,6 +504,7 @@ def get_required_distribution_names(
             _get_pkg_requirement(requirement_string),
             exclude=exclude,
             recursive=recursive,
+            echo=echo,
         )
     )
 
@@ -524,7 +528,7 @@ def install_requirement(
     """
     if isinstance(requirement, str):
         requirement = Requirement(requirement)
-    return _install_requirement(requirement, echo)
+    return _install_requirement(requirement, echo=echo)
 
 
 def _install_requirement(
@@ -575,7 +579,14 @@ def _install_requirement(
             )
         except OSError as error:
             append_exception_text(
-                error, f"Could not install {name} from {requirement_string}"
+                error,
+                (
+                    f"\nCould not install {name}"
+                    if name == requirement_string
+                    else (
+                        f"\nCould not install {name} from {requirement_string}"
+                    )
+                ),
             )
             raise error
     # Refresh the metadata
@@ -586,7 +597,10 @@ def _install_requirement(
 
 
 def _get_pkg_requirement_distribution(
-    requirement: pkg_resources.Requirement, name: str, reinstall: bool = True
+    requirement: pkg_resources.Requirement,
+    name: str,
+    reinstall: bool = True,
+    echo: bool = False,
 ) -> Optional[pkg_resources.Distribution]:
     if name in _BUILTIN_DISTRIBUTION_NAMES:
         return None
@@ -595,14 +609,15 @@ def _get_pkg_requirement_distribution(
     except KeyError:
         if not reinstall:
             raise
-        warn(
-            f'The required distribution "{name}" was not installed, '
-            "attempting to install it now..."
-        )
+        if echo:
+            warn(
+                f'The required distribution "{name}" was not installed, '
+                "attempting to install it now..."
+            )
         # Attempt to install the requirement...
-        install_requirement(requirement)
+        install_requirement(requirement, echo=echo)
         return _get_pkg_requirement_distribution(
-            requirement, name, reinstall=False
+            requirement, name, reinstall=False, echo=echo
         )
 
 
@@ -610,6 +625,7 @@ def _iter_requirement_names(
     requirement: pkg_resources.Requirement,
     exclude: Set[str],
     recursive: bool = True,
+    echo: bool = False,
 ) -> Iterable[str]:
     name: str = normalize_name(requirement.project_name)
     extras: Set[str] = set(map(normalize_name, requirement.extras))
@@ -620,7 +636,7 @@ def _iter_requirement_names(
     exclude.add(name)
     distribution: Optional[
         pkg_resources.Distribution
-    ] = _get_pkg_requirement_distribution(requirement, name)
+    ] = _get_pkg_requirement_distribution(requirement, name, echo=echo)
     if distribution is None:
         return ()
     requirements: List[pkg_resources.Requirement] = distribution.requires(
@@ -638,6 +654,7 @@ def _iter_requirement_names(
                 | (lateral_exclude - {_get_pkg_requirement_name(requirement_)})
             ),
             recursive=recursive,
+            echo=echo,
         )
 
     def not_excluded(name: str) -> bool:
@@ -657,6 +674,7 @@ def _iter_requirement_names(
 
 def _iter_requirement_strings_required_distribution_names(
     requirement_strings: Iterable[str],
+    echo: bool = False,
 ) -> Iterable[str]:
     visited_requirement_strings: Set[str] = set()
     if isinstance(requirement_strings, str):
@@ -669,9 +687,9 @@ def _iter_requirement_strings_required_distribution_names(
                     requirement_string
                 )
                 visited_requirement_strings.add(requirement_string)
-                return get_required_distribution_names(requirement_string) | {
-                    name
-                }
+                return get_required_distribution_names(
+                    requirement_string, echo=echo
+                ) | {name}
             except KeyError:
                 pass
         return set()
@@ -683,6 +701,7 @@ def _iter_requirement_strings_required_distribution_names(
 
 def get_requirements_required_distribution_names(
     requirements: Iterable[str] = (),
+    echo: bool = False,
 ) -> Set[str]:
     """
     Get the distributions required by one or more specified distributions or
@@ -716,6 +735,7 @@ def get_requirements_required_distribution_names(
                         ),
                     )
                 ),
+                echo=echo,
             ),
             key=lambda name: name.lower(),
         )
