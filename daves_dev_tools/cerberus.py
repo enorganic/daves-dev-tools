@@ -144,12 +144,12 @@ def apply_sys_argv_cerberus_arguments(
     cerberus_url: str = sys_argv_pop(  # type: ignore
         keys=url_parameter_name, flag=False
     )
-    assert cerberus_url, f"The `{url_parameter_name}` argument is required"
-    key: str
-    cerberus_path_keys: Iterable[str]
-    for key, cerberus_path_keys in parameter_map_items:
-        value: str
-        for value in iter_sys_argv_pop(  # type: ignore
-            keys=cerberus_path_keys, argv=argv, flag=False
-        ):
-            argv += [key, get_cerberus_secret(cerberus_url, value)[-1]]
+    if cerberus_url:
+        key: str
+        cerberus_path_keys: Iterable[str]
+        for key, cerberus_path_keys in parameter_map_items:
+            value: str
+            for value in iter_sys_argv_pop(  # type: ignore
+                keys=cerberus_path_keys, argv=argv, flag=False
+            ):
+                argv += [key, get_cerberus_secret(cerberus_url, value)[-1]]
