@@ -42,7 +42,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install
-      run: make
+      run: python3 -m venv venv && make install
     - name: Build and Publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
