@@ -2,6 +2,7 @@ import argparse
 import re
 import sys
 import os
+from itertools import chain
 from pkg_resources import Distribution
 from pipes import quote
 from typing import Iterable, Set, List, Tuple, Pattern
@@ -24,36 +25,27 @@ EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS: Tuple[str, ...] = (
 )
 
 
-def _install_distribution(
-    name: str, directory: str, dry_run: bool, include_extras: bool
-) -> None:
-    requirement_string: str = directory
-    command: str
+def _get_requirement_string(
+    name: str, directory: str, include_extras: bool
+) -> str:
+    requirement_string: str = os.path.abspath(directory)
     if is_installed(name) and include_extras:
         distribution: Distribution = get_distribution(name)
         if distribution.extras:
             requirement_string = (
                 f"{requirement_string}" f"[{','.join(distribution.extras)}]"
             )
-    command = (
-        f"{quote(sys.executable)} -m pip install "
-        f"-e {quote(requirement_string)}"
-    )
-    if dry_run:
-        print(command)
-    else:
-        run(command)
+    return requirement_string
 
 
-def find_and_install_distributions(
+def _iter_find_distributions(
     distribution_names: Set[str],
     directories: Iterable[str] = ("../"),
     exclude_directory_regular_expressions: Iterable[
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
-    dry_run: bool = False,
     include_extras: bool = False,
-) -> None:
+) -> Iterable[str]:
     if isinstance(directories, str):
         directories = (directories,)
     directories = map(os.path.abspath, directories)
@@ -68,7 +60,7 @@ def find_and_install_distributions(
                 return False
         return True
 
-    def find_and_install_directory_distributions(directory: str) -> None:
+    def iter_find_directory_distributions(directory: str) -> Iterable[str]:
         sub_directories: List[str]
         files: List[str]
         sub_directories, files = next(iter(os.walk(directory)))[1:3]
@@ -81,16 +73,46 @@ def find_and_install_distributions(
         if any(map(_SETUP_NAMES.__contains__, map(str.lower, files))):
             name: str = get_setup_distribution_name(directory)
             if name in distribution_names:
-                _install_distribution(name, directory, dry_run, include_extras)
+                yield _get_requirement_string(name, directory, include_extras)
         else:
-            list(
-                map(
-                    find_and_install_directory_distributions,
+            return chain(
+                *map(
+                    iter_find_directory_distributions,
                     filter(include_directory, sub_directories),
                 )
             )
 
-    list(map(find_and_install_directory_distributions, directories))
+    return chain(*map(iter_find_directory_distributions, directories))
+
+
+def find_and_install_distributions(
+    distribution_names: Set[str],
+    directories: Iterable[str] = ("../"),
+    exclude_directory_regular_expressions: Iterable[
+        str
+    ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
+    dry_run: bool = False,
+    include_extras: bool = False,
+) -> None:
+    requirements: Iterable[str] = map(
+        quote,
+        _iter_find_distributions(
+            distribution_names=distribution_names,
+            directories=directories,
+            exclude_directory_regular_expressions=(
+                exclude_directory_regular_expressions
+            ),
+            include_extras=include_extras,
+        ),
+    )
+    command = (
+        f"{quote(sys.executable)} -m pip install "
+        f"-e {' -e '.join(requirements)}"
+    )
+    if dry_run:
+        print(command)
+    else:
+        run(command)
 
 
 def install_editable(

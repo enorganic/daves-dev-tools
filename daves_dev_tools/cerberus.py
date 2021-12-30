@@ -4,8 +4,17 @@ import sys
 from warnings import warn
 from collections import OrderedDict
 from traceback import format_exception
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Iterable,
+    Mapping,
+    Union,
+)
 import boto3  # type: ignore
 from botocore.exceptions import (  # type: ignore
     ClientError,
@@ -13,8 +22,13 @@ from botocore.exceptions import (  # type: ignore
 )
 from cerberus import CerberusClientException  # type: ignore
 from cerberus.client import CerberusClient  # type: ignore
+from .utilities import sys_argv_pop, iter_sys_argv_pop
 
-__all__: List[str] = ["get_cerberus_secrets", "get_cerberus_secret"]
+__all__: List[str] = [
+    "get_cerberus_secrets",
+    "get_cerberus_secret",
+    "apply_sys_argv_cerberus_arguments",
+]
 lru_cache: Callable[..., Any] = functools.lru_cache
 # For backwards compatibility:
 sys.modules["daves_dev_tools.utilities.cerberus"] = sys.modules[__name__]
@@ -94,3 +108,48 @@ def get_cerberus_secret(cerberus_url: str, path: str) -> Tuple[str, str]:
     )
     # Return the key and the value stored at the secret's "key" index
     return key, secrets[key]
+
+
+def apply_sys_argv_cerberus_arguments(
+    url_parameter_name: Iterable[str],
+    parameter_map: Union[
+        Mapping[str, Iterable[str]],
+        Iterable[Tuple[str, Iterable[str]]],
+    ],
+    argv: Optional[List[str]] = None,
+) -> None:
+    """
+    This function modifies `sys.argv` by performing lookups against a specified
+    Cerberus API and inserting the retrieved values into mapped keyword
+    argument values.
+
+    Parameters:
+
+    - url_parameter_name (str): The base URL of the Cerberus API.
+    - parameter_map ({str: [str]}): Maps final keyword argument names to
+      keyword argument names wherein to find Cerberus paths to lookup
+      values to pass to the final keyword arguments. Cerberus path keyword
+      arguments are removed from `sys.argv` and final keyword arguments are
+      inserted into `sys.argv`.
+    - argv ([str]) = sys.argv: If provided, this list will be modified instead
+      of `sys.argv`.
+    """
+    if argv is None:
+        argv = sys.argv
+    parameter_map_items: Iterable[Tuple[str, Iterable[str]]]
+    if isinstance(parameter_map, Mapping):
+        parameter_map_items = parameter_map.items()
+    else:
+        parameter_map_items = parameter_map
+    cerberus_url: str = sys_argv_pop(  # type: ignore
+        keys=url_parameter_name, flag=False
+    )
+    assert cerberus_url, f"The `{url_parameter_name}` argument is required"
+    key: str
+    cerberus_path_keys: Iterable[str]
+    for key, cerberus_path_keys in parameter_map_items:
+        value: str
+        for value in iter_sys_argv_pop(  # type: ignore
+            keys=cerberus_path_keys, argv=argv, flag=False
+        ):
+            argv += [key, get_cerberus_secret(cerberus_url, value)[-1]]

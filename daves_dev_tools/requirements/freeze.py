@@ -1,11 +1,12 @@
 import pkg_resources
 import argparse
+from fnmatch import fnmatch
 from itertools import chain
-from typing import Iterable, Dict, Tuple, Set
+from typing import Iterable, Tuple, Set
 from more_itertools import unique_everseen
 from .utilities import (
     get_required_distribution_names,
-    get_installed_distributions,
+    get_distribution,
     install_requirement,
     iter_configuration_file_requirement_strings,
     get_requirement_string_distribution_name,
@@ -14,7 +15,8 @@ from .utilities import (
 )
 from ..utilities import iter_parse_delimited_values
 
-_STANDARD_LIBRARY_DISTRIBUTION_NAMES: Set[str] = {
+_DO_NOT_PIN_DISTRIBUTION_NAMES: Set[str] = {
+    # standard library
     "importlib-metadata",
     "importlib-resources",
 }
@@ -24,7 +26,7 @@ def get_frozen_requirements(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
     exclude_recursive: Iterable[str] = (),
-    no_versions: bool = False,
+    no_versions: Iterable[str] = (),
 ) -> Tuple[str, ...]:
     """
     Get the (frozen) requirements for one or more specified distributions or
@@ -40,7 +42,7 @@ def get_frozen_requirements(
       Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
-    - no_versions (bool) = False: Exclude version numbers from the output
+    - no_versions ([str]) = (): Exclude version numbers from the output
       (only return distribution names)
     """
     # Separate requirement strings from requirement files
@@ -48,6 +50,10 @@ def get_frozen_requirements(
         requirements = {requirements}
     else:
         requirements = set(requirements)
+    if isinstance(no_versions, str):
+        no_versions = (no_versions,)
+    elif not isinstance(no_versions, tuple):
+        no_versions = tuple(no_versions)
     requirement_files: Set[str] = set(
         filter(is_configuration_file, requirements)
     )
@@ -86,31 +92,29 @@ def _iter_frozen_requirements(
     requirement_strings: Iterable[str],
     exclude: Set[str],
     exclude_recursive: Set[str],
-    no_versions: bool = False,
+    no_versions: Iterable[str] = (),
 ) -> Iterable[str]:
-    if isinstance(requirement_strings, str):
-        requirement_strings = (requirement_strings,)
-    installed_distributions: Dict[
-        str, pkg_resources.Distribution
-    ] = get_installed_distributions()
-
     def get_requirement_string(distribution_name: str) -> str:
-        # Don't pin importlib-metadata, as it is part of the standard
-        # library and we should use the version distributed with
-        # python
-        if distribution_name in _STANDARD_LIBRARY_DISTRIBUTION_NAMES:
+        def distribution_name_matches_pattern(pattern: str) -> bool:
+            return fnmatch(distribution_name, pattern)
+
+        # * Don't pin importlib-metadata, as it is part of the standard
+        #   library so we should use the version distributed with
+        #   python, and...
+        # * Only include the version in the requirement string if
+        #   the package name does not match any patterns provided in the
+        #   `no_versions` argument
+        if (distribution_name in _DO_NOT_PIN_DISTRIBUTION_NAMES) or any(
+            map(distribution_name_matches_pattern, no_versions)
+        ):
             return distribution_name
-        nonlocal installed_distributions
         distribution: pkg_resources.Distribution
         try:
-            distribution = installed_distributions[distribution_name]
+            distribution = get_distribution(distribution_name)
         except KeyError:
             # If the distribution is missing, install it
-            install_requirement(distribution_name)
-            installed_distributions = get_installed_distributions()
-            distribution = installed_distributions[distribution_name]
-        # TODO: Remove this entirely if proves out
-        # _reload_distribution(distribution)
+            install_requirement(distribution_name, echo=False)
+            distribution = get_distribution(distribution_name)
         requirement_string: str = str(distribution.as_requirement())
         # Only include dataclasses for python 3.6
         if distribution_name == "dataclasses":
@@ -135,8 +139,8 @@ def _iter_frozen_requirements(
     requirements: Iterable[str] = unique_everseen(
         chain(*map(get_required_distribution_names_, requirement_strings)),
     )
-    if not no_versions:
-        requirements = map(get_requirement_string, requirements)
+
+    requirements = map(get_requirement_string, requirements)
     return requirements
 
 
@@ -144,7 +148,7 @@ def freeze(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
     exclude_recursive: Iterable[str] = (),
-    no_versions: bool = False,
+    no_versions: Iterable[str] = (),
 ) -> None:
     """
     Print the (frozen) requirements for one or more specified requirements or
@@ -160,8 +164,9 @@ def freeze(
       Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
-    - no_versions (bool) = False: Exclude version numbers from the output
-      (only print distribution names)
+    - no_versions ([str]) = (): Exclude version numbers from the output
+      (only print distribution names) for package names matching any of these
+      patterns
     """
     print(
         "\n".join(
@@ -211,10 +216,14 @@ def main() -> None:
     parser.add_argument(
         "-nv",
         "--no-versions",
-        default=False,
-        const=True,
-        action="store_const",
-        help="Don't include versions (only output distribution names)",
+        type=str,
+        default=[],
+        action="append",
+        help=(
+            "Don't include versions (only output distribution names) "
+            "for packages matching this glob pattern (note: the value must "
+            "be single-quoted if it contain wildcards)"
+        ),
     )
     arguments: argparse.Namespace = parser.parse_args()
     freeze(

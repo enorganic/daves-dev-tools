@@ -15,7 +15,7 @@ from daves_dev_tools.requirements.update import (
 
 
 TEST_PROJECT_DIRECTORY: str = os.path.join(
-    os.path.dirname(__file__), "test_project/"
+    os.path.dirname(__file__), "test_projects/test_project_a/"
 )
 
 
@@ -43,6 +43,7 @@ def validate_zero_specifier(specifier: Specifier) -> None:
 
 def validate_requirement(requirement_string: str) -> None:
     if requirement_string:
+        print(requirement_string)
         requirement: Requirement = Requirement(requirement_string)
         if requirement.name == "pip":
             assert not requirement.specifier, requirement_string

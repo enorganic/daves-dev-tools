@@ -1,25 +1,24 @@
 import functools
-import importlib
 import os
 import re
 import sys
 from distutils.core import run_setup
 from time import time
-from types import ModuleType
 from typing import (
     Any,
     Callable,
-    Dict,
     FrozenSet,
     Iterable,
     List,
     Optional,
-    Set,
     Tuple,
-    Union,
 )
+from .utilities import run, sys_argv_get, sys_argv_pop, run_module_as_main
 
-from .utilities import run, run_module_as_main
+try:
+    from .cerberus import apply_sys_argv_cerberus_arguments
+except ImportError:
+    apply_sys_argv_cerberus_arguments = None  # type: ignore
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -79,7 +78,9 @@ def _get_help() -> bool:
             r"\btwine upload\b( \[-h\])?",
             (
                 "daves-dev-tools distribute\\1 "
-                "[-cu CERBERUS_URL] [-cp CERBERUS_PATH]\n"
+                "[-cu CERBERUS_URL]\n"
+                "                    [-cup CERBERUS_USERNAME_PATH]\n"
+                "                    [-cpp CERBERUS_PASSWORD_PATH]\n"
                 "                   "
             ),
             help_,
@@ -89,13 +90,22 @@ def _get_help() -> bool:
             "  -cu CERBERUS_URL, --cerberus-url CERBERUS_URL\n"
             "                        The base URL of a Cerberus REST API.\n"
             "                        See: https://swoo.sh/3DBW2Vb\n"
-            "  -cp CERBERUS_PATH, --cerberus-path CERBERUS_PATH\n"
+            "  -cup CERBERUS_USERNAME_PATH, --cerberus-username-path "
+            "CERBERUS_USERNAME_PATH\n"
+            "                        A Cerberus secure data path (including "
+            "/key) wherein a\n"
+            "                        username with which to authenticate can "
+            "be found.\n"
+            "                        See: https://swoo.sh/3DBW2Vb\n"
+            "  -cpp CERBERUS_PASSWORD_PATH, --cerberus-password-path "
+            "CERBERUS_PASSWORD_PATH\n"
             "                        A Cerberus secure data path (including "
             "/key) wherein a\n"
             "                        password with which to authenticate can "
             "be found.\n"
-            "                        If no USERNAME is provided, the last "
-            "part of this path\n"
+            "                        If no USERNAME or CERBERUS_USERNAME_PATH "
+            "is provided,\n"
+            "                        the last part of this path \n"
             "                        (the secure data path entry key) is "
             "inferred as your\n"
             "                        username. See: https://swoo.sh/3DBW2Vb\n"
@@ -105,51 +115,62 @@ def _get_help() -> bool:
     return False
 
 
-def _get_credentials_from_cerberus() -> Tuple[Optional[str], Optional[str]]:
+def _get_credentials_from_cerberus() -> None:
     """
     If `--cerberus-url` and `--cerberus-path` keyword arguments are provided,
-    retrieve the repository credentials and store them in the "TWINE_USERNAME"
-    and "TWINE_PASSWORD" environment variables.
+    retrieve the repository credentials and apply them to their corresponding
+    static arguments.
     """
-    username: Optional[str] = _argv_pop(
-        sys.argv, "-u", _argv_pop(sys.argv, "--username")
+    # If this package was not installed with the [cerberus] option, none
+    # this function is not applicable
+    if apply_sys_argv_cerberus_arguments is None:
+        return
+    cerberus_password_path_keywords: Tuple[str, str, str, str] = (
+        "-cpp",
+        "--cerberus-password-path",
+        # For backwards compatibility
+        "-cp",
+        "--cerberus-path",
     )
-    password: Optional[str] = None
-    cerberus_url: Optional[str] = _argv_pop(
-        sys.argv, "--cerberus-url", None
-    ) or _argv_pop(sys.argv, "-cu", None)
-    cerberus_path: Optional[str] = _argv_pop(
-        sys.argv, "--cerberus-path", None
-    ) or _argv_pop(sys.argv, "-cp", None)
-    if cerberus_url and cerberus_path:
-        # Only import the Cerberus utility if/when the "--cerberus-url"
-        # and "--cerberus-path" keyword arguments are provided, as the
-        # "cerberus-python-client" and "boto3" libraries needed for this
-        # are optional (only installed with the package extra
-        # "daves-dev-tools[cerberus]")
-        cerberus: ModuleType = importlib.import_module(
-            ".cerberus",
-            (
-                os.path.split(os.path.dirname(__file__))[-1]
-                if __name__ == "__main__"
-                else ".".join(__name__.split(".")[:-1])
-            ),
+    username: Optional[str] = sys_argv_get(  # type: ignore
+        ("-u", "--username")
+    )
+    cerberus_password_path: Optional[str] = sys_argv_get(  # type: ignore
+        cerberus_password_path_keywords
+    )
+    if cerberus_password_path:
+        cerberus_password_path = cerberus_password_path.strip("/ ")
+        cerberus_password_path_list: List[str] = cerberus_password_path.split(
+            "/"
         )
-        if not username:
-            # If no username is provided, we assume the username has
-            # been concatenated with the path, and extract it
-            cerberus_path_list: List[str] = cerberus_path.split("/")
-            username = cerberus_path_list.pop()
-            cerberus_path = "/".join(cerberus_path_list)
-        secrets: Union[Dict[str, str], str, None] = getattr(
-            cerberus, "get_cerberus_secrets"
-        )(cerberus_url, cerberus_path)
-        if secrets is not None:
-            assert isinstance(secrets, dict)
-            password = secrets[username]
-            sys.argv += ["--username", username]
-            sys.argv += ["--password", password]
-    return username, password
+        path_length: int = len(cerberus_password_path_list)
+        if path_length == 2 and username:
+            # Append the SDB key
+            sys_argv_pop(cerberus_password_path_keywords, flag=False)
+            sys.argv += [
+                cerberus_password_path_keywords[0],
+                f"{cerberus_password_path}/{username}",
+            ]
+        elif path_length == 3:
+            if not username:
+                # Infer the username to be the SDB key
+                sys.argv += ["-u", cerberus_password_path_list[-1]]
+        else:
+            raise ValueError(
+                "The value for -cpp or --cerberus-password-path must be "
+                "formatted either as:\n"
+                '- "safe-deposit-box/secret" '
+                "(if a `--username` is provided) or\n"
+                '- "safe-deposit-box/secret/key"\n'
+                f"...not: {repr(cerberus_password_path)}"
+            )
+    apply_sys_argv_cerberus_arguments(
+        ("-cu", "--cerberus-url"),
+        {
+            "-u": ("-cup", "--cerberus-username-path"),
+            "-p": cerberus_password_path_keywords,
+        },
+    )
 
 
 def _dist(root: str, distributions: FrozenSet[str], echo: bool = True) -> None:
@@ -170,65 +191,10 @@ def _cleanup(root: str) -> None:
         os.chdir(current_directory)
 
 
-def _negative_enumerate_index(item: Tuple[int, Any]) -> Tuple[int, Any]:
-    return -item[0], item[1]
-
-
-def _argv_get_last_index(
-    argv: List[str], keys: Optional[Set[str]] = None
-) -> Optional[int]:
-    """
-    Return the index of the last item in `argv` which matches one of the
-    indicated keys, or `None`, if not found. If no keys are provided,
-    find the index of the last positional argument.
-    """
-    if isinstance(keys, str):
-        keys = {keys}
-    index: int
-    for index, value in map(
-        _negative_enumerate_index, enumerate(reversed(argv), 1)  # type: ignore
-    ):
-        if keys is not None:
-            if value in keys:
-                return index
-        elif not value.startswith("-"):
-            try:
-                if not argv[index - 1].startswith("-"):
-                    return -index
-            except IndexError:
-                pass
-    return None
-
-
-def _argv_pop_last_positional(argv: List[str], default: str = "") -> str:
-    index: Optional[int] = _argv_get_last_index(argv)
-    if index is not None:
-        return argv.pop(index)
-    return default
-
-
-def _argv_pop(
-    argv: List[str], key: str, default: Optional[str] = None
-) -> Optional[str]:
-    key_index: int
-    value: Optional[str] = default
-    # Ensure we are looking for a keyword argument
-    assert key.startswith("-")
-    try:
-        key_index = argv.index(key)
-        # Ensure there is a value
-        assert len(argv) > key_index + 1
-        value = argv.pop(key_index + 1)
-        argv.pop(key_index)
-    except ValueError:
-        pass
-    return value
-
-
 def main(root: str = "") -> None:
     if not _get_help():
         _get_credentials_from_cerberus()
-        root = root or _argv_pop_last_positional(sys.argv, ".")
+        root = root or sys_argv_pop(default=".")  # type: ignore
         root = os.path.abspath(root).rstrip("/")
         try:
             _dist(root, _setup(root))
