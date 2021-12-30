@@ -144,14 +144,14 @@ def _get_credentials_from_cerberus() -> None:
             "/"
         )
         path_length: int = len(cerberus_password_path_list)
-        if path_length == 2 and username:
+        if path_length == 3 and username:
             # Append the SDB key
             sys_argv_pop(cerberus_password_path_keywords, flag=False)
             sys.argv += [
                 cerberus_password_path_keywords[0],
                 f"{cerberus_password_path}/{username}",
             ]
-        elif path_length == 3:
+        elif path_length == 4:
             if not username:
                 # Infer the username to be the SDB key
                 sys.argv += ["-u", cerberus_password_path_list[-1]]
@@ -159,9 +159,9 @@ def _get_credentials_from_cerberus() -> None:
             raise ValueError(
                 "The value for -cpp or --cerberus-password-path must be "
                 "formatted either as:\n"
-                '- "safe-deposit-box/secret" '
+                '- "namespace/safe-deposit-box/secret" '
                 "(if a `--username` is provided) or\n"
-                '- "safe-deposit-box/secret/key"\n'
+                '- "namespace/safe-deposit-box/secret/key"\n'
                 f"...not: {repr(cerberus_password_path)}"
             )
     apply_sys_argv_cerberus_arguments(
