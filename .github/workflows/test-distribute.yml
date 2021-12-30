@@ -27,7 +27,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: Install
-      run: make
+      run: python3 -m venv venv && make install
     - name: Tox
       run: venv/bin/tox -p all
   distribute:
