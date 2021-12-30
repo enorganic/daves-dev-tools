@@ -1,9 +1,6 @@
 # python 3.6 is used, for the time being, in order to ensure compatibility
-venv:
-	(python3.6 -m venv venv || python3 -m venv venv) && \
-	make install
-
 install:
+	(python3.6 -m venv venv || python3 -m venv venv) && \
 	venv/bin/pip3 install --upgrade pip && \
 	venv/bin/pip3 install\
 	 -r requirements.txt\
