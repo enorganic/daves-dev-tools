@@ -191,10 +191,10 @@ def _cleanup(root: str) -> None:
         os.chdir(current_directory)
 
 
-def main(root: str = "") -> None:
+def main() -> None:
     if not _get_help():
         _get_credentials_from_cerberus()
-        root = root or sys_argv_pop(default=".")  # type: ignore
+        root = sys_argv_pop(depth=2, default=".")  # type: ignore
         root = os.path.abspath(root).rstrip("/")
         try:
             _dist(root, _setup(root))

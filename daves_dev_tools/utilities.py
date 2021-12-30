@@ -158,9 +158,10 @@ def _get_keys_set(keys: Optional[Iterable[str]] = None) -> Optional[Set[str]]:
 def _iter_reversed_sys_argv_indices(
     keys: Optional[Iterable[str]] = None,
     argv: Optional[List[str]] = None,
+    depth: int = 1,
 ) -> Iterable[int]:
     """
-    In reverse order, yield the (negative) indices of the item in `sys.argv`
+    In reverse order, yield the indices of the item in `sys.argv`
     index one of the indicated keys. If no `keys` are provided, yield the
     indices of all positional arguments.
     """
@@ -170,7 +171,7 @@ def _iter_reversed_sys_argv_indices(
     length: int = len(argv)
     index: int
     negative_index: int
-    for negative_index, value in enumerate(reversed(argv), 1):
+    for negative_index, value in enumerate(reversed(argv[depth:]), 1):
         index = length - negative_index
         if keys is not None:
             if value in keys:
@@ -209,6 +210,7 @@ def iter_sys_argv_pop(
     keys: Optional[Iterable[str]],
     argv: Optional[List[str]],
     flag: Optional[bool],
+    depth: int = 1,
 ) -> Iterable[Union[str, bool]]:
     ...
 
@@ -217,6 +219,7 @@ def iter_sys_argv_pop(
     keys: Optional[Iterable[str]] = None,
     argv: Optional[List[str]] = None,
     flag: Optional[bool] = None,
+    depth: int = 1,
 ) -> Iterable[Union[str, bool]]:
     """
     Remove and yield all values, in reverse order, for an argument,
@@ -233,6 +236,8 @@ def iter_sys_argv_pop(
     - flag (bool) = False: If `True`, treat the argument as a flag.
       If `False`, treat the argument as a flag only if it is not followed
       by a value.
+    - depth (int) = 1: The number of items in `sys.argv` which should be
+      interpreted as commands rather than positional arguments
 
     Examples:
 
@@ -270,7 +275,8 @@ def iter_sys_argv_pop(
     ...                 "pytest",
     ...                 "tox",
     ...                 ".",
-    ...             ]
+    ...             ],
+    ...             depth=2,
     ...         )
     ...     ),
     ...     maxlen=0
@@ -278,12 +284,10 @@ def iter_sys_argv_pop(
     .
     tox
     pytest
-    install
-    pip
     deque([], maxlen=0)
     """
     return _iter_sys_argv_function(
-        keys=keys, argv=argv, flag=flag, function=list.pop
+        keys=keys, argv=argv, flag=flag, function=list.pop, depth=depth
     )
 
 
@@ -292,12 +296,15 @@ def iter_sys_argv_get(
     keys: None,
     argv: Optional[List[str]],
     flag: bool,
+    depth: int,
 ) -> Iterable[str]:
     ...
 
 
 @overload
-def iter_sys_argv_get(keys: None, argv: Optional[List[str]]) -> Iterable[str]:
+def iter_sys_argv_get(
+    keys: None, argv: Optional[List[str]], flag: Optional[bool], depth: int
+) -> Iterable[str]:
     ...
 
 
@@ -313,6 +320,7 @@ def iter_sys_argv_get(
     keys: Optional[Iterable[str]],
     argv: Optional[List[str]],
     flag: Optional[bool],
+    depth: int,
 ) -> Iterable[Union[str, bool]]:
     ...
 
@@ -321,6 +329,7 @@ def iter_sys_argv_get(
     keys: Optional[Iterable[str]] = None,
     argv: Optional[List[str]] = None,
     flag: Optional[bool] = None,
+    depth: int = 1,
 ) -> Iterable[Union[str, bool]]:
     """
     Yield all values, in reverse order, for an argument, from `sys.argv`.
@@ -336,6 +345,8 @@ def iter_sys_argv_get(
     - flag (bool) = False: If `True`, treat the argument as a flag.
       If `False`, treat the argument as a flag only if it is not followed
       by a value.
+    - depth (int) = 1: The number of items in `sys.argv` which should be
+      interpreted as commands rather than positional arguments
 
     Examples:
 
@@ -373,7 +384,8 @@ def iter_sys_argv_get(
     ...                 "pytest",
     ...                 "tox",
     ...                 ".",
-    ...             ]
+    ...             ],
+    ...             depth=2,
     ...         )
     ...     ),
     ...     maxlen=0
@@ -381,12 +393,10 @@ def iter_sys_argv_get(
     .
     tox
     pytest
-    install
-    pip
     deque([], maxlen=0)
     """
     return _iter_sys_argv_function(
-        keys=keys, argv=argv, flag=flag, function=list.__getitem__
+        keys=keys, argv=argv, flag=flag, function=list.__getitem__, depth=depth
     )
 
 
@@ -395,11 +405,14 @@ def _iter_sys_argv_function(
     argv: Optional[List[str]] = None,
     flag: Optional[bool] = None,
     function: Callable[[list, int], Union[str, bool]] = list.pop,
+    depth: int = 1,
 ) -> Iterable[Union[str, bool]]:
     if argv is None:
         argv = sys.argv
     index: Optional[int]
-    for index in _iter_reversed_sys_argv_indices(keys=keys, argv=argv):
+    for index in _iter_reversed_sys_argv_indices(
+        keys=keys, argv=argv, depth=depth
+    ):
         if keys is None:
             yield function(argv, index)
         else:
@@ -438,6 +451,7 @@ def sys_argv_pop(
     default: Optional[str] = None,
     argv: Optional[List[str]] = None,
     flag: Optional[bool] = None,
+    depth: int = 1,
 ) -> Union[str, bool, None]:
     """
     Remove and return the last value for a keyword argument from `sys.argv`,
@@ -452,6 +466,8 @@ def sys_argv_pop(
       is returned.
     - arg ([str]) = sys.argv: If provided, this list will be parsed instead
       of `sys.argv`.
+    - depth (int) = 1: The number of items in `sys.argv` which should be
+      interpreted as commands rather than positional arguments
 
     Examples:
 
@@ -483,7 +499,11 @@ def sys_argv_pop(
     .
     """
     try:
-        return next(iter(iter_sys_argv_pop(keys=keys, argv=argv, flag=flag)))
+        return next(
+            iter(
+                iter_sys_argv_pop(keys=keys, argv=argv, flag=flag, depth=depth)
+            )
+        )
     except StopIteration:
         return default
 
@@ -508,6 +528,7 @@ def sys_argv_get(
     default: Optional[str] = None,
     argv: Optional[List[str]] = None,
     flag: Optional[bool] = None,
+    depth: int = 1,
 ) -> Union[str, bool, None]:
     """
     Return the last value for a keyword argument from `sys.argv`, or `None`
@@ -553,6 +574,10 @@ def sys_argv_get(
     .
     """
     try:
-        return next(iter(iter_sys_argv_get(keys=keys, argv=argv, flag=flag)))
+        return next(
+            iter(
+                iter_sys_argv_get(keys=keys, argv=argv, flag=flag, depth=depth)
+            )
+        )
     except StopIteration:
         return default
