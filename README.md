@@ -13,9 +13,11 @@ pip3 install daves-dev-tools
 
 In order to use some features of this library, you will need to specify
 one or more *extras*:
+
 - "cerberus": This extra installs requirements needed in order to import
   `daves_dev_tools.cerberus`, which provides utilities for interacting
   with a [Cerberus](https://engineering.nike.com/cerberus/) vault.
+
   ```shell
   pip3 install daves-dev-tools[cerberus]
   ```
@@ -138,43 +140,63 @@ optional arguments:
 
 #### daves-dev-tools requirements update
 
-```
-$ daves-dev-tools requirements update -hrequirements freeze [-h] [-e EXCLUDE] requirement [requirement ...]
+```text
+$ daves-dev-tools requirements update -h
+usage: daves-dev-tools requirements update [-h] [-i IGNORE]
+                                           [-aen ALL_EXTRA_NAME] [-v]
+                                           path [path ...]
 
 positional arguments:
-  requirement           One or more requirement specifiers or configuration file paths
+  path                  One or more local paths to a *setup.cfg* and/or
+                        *requirements.txt* file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -e EXCLUDE, --exclude EXCLUDE
-                        A comma-separated list of distributions to exclude from
-                        the output. Please note that excluding a distribution
-                        also excludes any/all requirements which might be
-                        recursively discovered for that package.
+  -i IGNORE, --ignore IGNORE
+                        A comma-separated list of distributions to ignore
+                        (leave any requirements pertaining to the package as-
+                        is)
+  -aen ALL_EXTRA_NAME, --all-extra-name ALL_EXTRA_NAME
+                        If provided, an extra which consolidates the
+                        requirements for all other extras will be
+                        added/updated to *setup.cfg* (this argument is ignored
+                        for *requirements.txt* files)
+  -v, --verbose         Echo more verbose output
 ```
 
 #### daves-dev-tools requirements freeze
 
-```
+```text
 $ daves-dev-tools requirements freeze -h
-usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE] [-er EXCLUDE_RECURSIVE] [-nv] requirement [requirement ...]
+usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE]
+                                           [-er EXCLUDE_RECURSIVE]
+                                           [-nv NO_VERSIONS]
+                                           requirement [requirement ...]
 
 positional arguments:
-  requirement           One or more requirement specifiers or configuration file paths
+  requirement           One or more requirement specifiers or configuration
+                        file paths
 
 optional arguments:
   -h, --help            show this help message and exit
   -e EXCLUDE, --exclude EXCLUDE
-                        A comma-separated list of distributions to exclude from the output
+                        A comma-separated list of distributions to exclude
+                        from the output
   -er EXCLUDE_RECURSIVE, --exclude-recursive EXCLUDE_RECURSIVE
-                        A comma-separated list of distributions to exclude from the output, along with any/all requirements which
-                        might have been recursively discovered for these packages
-  -nv, --no-versions    Don't include versions (only output distribution names)
+                        A comma-separated list of distributions to exclude
+                        from the output, along with any/all requirements which
+                        might have been recursively discovered for these
+                        packages
+  -nv NO_VERSIONS, --no-versions NO_VERSIONS
+                        Don't include versions (only output distribution
+                        names) for packages matching this glob pattern (note:
+                        the value must be single-quoted if it contain
+                        wildcards)
 ```
 
 #### daves-dev-tools make-typed
 
-```
+```text
 $ daves-dev-tools make-typed -h
 usage: daves-dev-tools make-typed [-h] path
 
@@ -189,7 +211,7 @@ optional arguments:
 
 ### daves-dev-tools uninstall-all
 
-```
+```text
 $ daves-dev-tools uninstall-all -h 
 usage: daves-dev-tools uninstall-all [-h] [-e EXCLUDE] [-dr]
 
