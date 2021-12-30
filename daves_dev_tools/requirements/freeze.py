@@ -26,7 +26,7 @@ def get_frozen_requirements(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
     exclude_recursive: Iterable[str] = (),
-    no_versions: Iterable[str] = (),
+    no_version: Iterable[str] = (),
 ) -> Tuple[str, ...]:
     """
     Get the (frozen) requirements for one or more specified distributions or
@@ -42,7 +42,7 @@ def get_frozen_requirements(
       Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
-    - no_versions ([str]) = (): Exclude version numbers from the output
+    - no_version ([str]) = (): Exclude version numbers from the output
       (only return distribution names)
     """
     # Separate requirement strings from requirement files
@@ -50,10 +50,10 @@ def get_frozen_requirements(
         requirements = {requirements}
     else:
         requirements = set(requirements)
-    if isinstance(no_versions, str):
-        no_versions = (no_versions,)
-    elif not isinstance(no_versions, tuple):
-        no_versions = tuple(no_versions)
+    if isinstance(no_version, str):
+        no_version = (no_version,)
+    elif not isinstance(no_version, tuple):
+        no_version = tuple(no_version)
     requirement_files: Set[str] = set(
         filter(is_configuration_file, requirements)
     )
@@ -81,7 +81,7 @@ def get_frozen_requirements(
                     )
                 ),
                 exclude_recursive=set(map(normalize_name, exclude_recursive)),
-                no_versions=no_versions,
+                no_version=no_version,
             ),
             key=lambda name: name.lower(),
         )
@@ -92,7 +92,7 @@ def _iter_frozen_requirements(
     requirement_strings: Iterable[str],
     exclude: Set[str],
     exclude_recursive: Set[str],
-    no_versions: Iterable[str] = (),
+    no_version: Iterable[str] = (),
 ) -> Iterable[str]:
     def get_requirement_string(distribution_name: str) -> str:
         def distribution_name_matches_pattern(pattern: str) -> bool:
@@ -103,9 +103,9 @@ def _iter_frozen_requirements(
         #   python, and...
         # * Only include the version in the requirement string if
         #   the package name does not match any patterns provided in the
-        #   `no_versions` argument
+        #   `no_version` argument
         if (distribution_name in _DO_NOT_PIN_DISTRIBUTION_NAMES) or any(
-            map(distribution_name_matches_pattern, no_versions)
+            map(distribution_name_matches_pattern, no_version)
         ):
             return distribution_name
         distribution: pkg_resources.Distribution
@@ -148,7 +148,7 @@ def freeze(
     requirements: Iterable[str] = (),
     exclude: Iterable[str] = (),
     exclude_recursive: Iterable[str] = (),
-    no_versions: Iterable[str] = (),
+    no_version: Iterable[str] = (),
 ) -> None:
     """
     Print the (frozen) requirements for one or more specified requirements or
@@ -164,7 +164,7 @@ def freeze(
       Note: Excluding a distribution here excludes all requirements which would
       be identified through recursively.
       those requirements occur elsewhere.
-    - no_versions ([str]) = (): Exclude version numbers from the output
+    - no_version ([str]) = (): Exclude version numbers from the output
       (only print distribution names) for package names matching any of these
       patterns
     """
@@ -174,7 +174,7 @@ def freeze(
                 requirements=requirements,
                 exclude=exclude,
                 exclude_recursive=exclude_recursive,
-                no_versions=no_versions,
+                no_version=no_version,
             )
         )
     )
@@ -215,7 +215,7 @@ def main() -> None:
     )
     parser.add_argument(
         "-nv",
-        "--no-versions",
+        "--no-version",
         type=str,
         default=[],
         action="append",
@@ -232,7 +232,7 @@ def main() -> None:
         exclude_recursive=tuple(
             iter_parse_delimited_values(arguments.exclude_recursive)
         ),
-        no_versions=arguments.no_versions,
+        no_version=arguments.no_version,
     )
 
 

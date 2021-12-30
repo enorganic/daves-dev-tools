@@ -170,7 +170,7 @@ optional arguments:
 $ daves-dev-tools requirements freeze -h
 usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE]
                                            [-er EXCLUDE_RECURSIVE]
-                                           [-nv NO_VERSIONS]
+                                           [-nv NO_VERSION]
                                            requirement [requirement ...]
 
 positional arguments:
@@ -187,8 +187,8 @@ optional arguments:
                         from the output, along with any/all requirements which
                         might have been recursively discovered for these
                         packages
-  -nv NO_VERSIONS, --no-versions NO_VERSIONS
-                        Don't include versions (only output distribution
+  -nv NO_VERSION, --no-version NO_VERSION
+                        Don't include the version (only output distribution
                         names) for packages matching this glob pattern (note:
                         the value must be single-quoted if it contain
                         wildcards)
