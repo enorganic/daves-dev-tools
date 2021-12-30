@@ -73,7 +73,11 @@ def _iter_find_distributions(
         if any(map(_SETUP_NAMES.__contains__, map(str.lower, files))):
             name: str = get_setup_distribution_name(directory)
             if name in distribution_names:
-                yield _get_requirement_string(name, directory, include_extras)
+                return (
+                    _get_requirement_string(name, directory, include_extras),
+                )
+            else:
+                return ()
         else:
             return chain(
                 *map(
@@ -94,25 +98,28 @@ def find_and_install_distributions(
     dry_run: bool = False,
     include_extras: bool = False,
 ) -> None:
-    requirements: Iterable[str] = map(
-        quote,
-        _iter_find_distributions(
-            distribution_names=distribution_names,
-            directories=directories,
-            exclude_directory_regular_expressions=(
-                exclude_directory_regular_expressions
+    requirements: Tuple[str, ...] = tuple(
+        map(
+            quote,
+            _iter_find_distributions(
+                distribution_names=distribution_names,
+                directories=directories,
+                exclude_directory_regular_expressions=(
+                    exclude_directory_regular_expressions
+                ),
+                include_extras=include_extras,
             ),
-            include_extras=include_extras,
-        ),
+        )
     )
-    command = (
-        f"{quote(sys.executable)} -m pip install "
-        f"-e {' -e '.join(requirements)}"
-    )
-    if dry_run:
-        print(command)
-    else:
-        run(command)
+    if requirements:
+        command = (
+            f"{quote(sys.executable)} -m pip install "
+            f"-e {' -e '.join(requirements)}"
+        )
+        if dry_run:
+            print(command)
+        else:
+            run(command)
 
 
 def install_editable(
