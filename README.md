@@ -140,6 +140,20 @@ optional arguments:
 
 #### daves-dev-tools requirements update
 
+Example:
+
+```shell script
+daves-dev-tools requirements update -aen all setup.cfg pyproject.toml tox.ini
+```
+
+The above command will update version specifiers for
+all package requirements in your setup.cfg, pyproject.toml, and tox.ini files
+to match currently installed versions of each distribution (matching existing
+granularity, and only for *inclusive* specifiers—so where the comparator is
+"~=", "==", ">=", or "<="—but not ">", "<", or "!=").
+
+Help:
+
 ```text
 $ daves-dev-tools requirements update -h
 usage: daves-dev-tools requirements update [-h] [-i IGNORE]
@@ -216,7 +230,7 @@ $ daves-dev-tools uninstall-all -h
 usage: daves-dev-tools uninstall-all [-h] [-e EXCLUDE] [-dr]
 
 This command will uninstall all distributions installed in the same environment as that from which this command is executed,
-excluding any specified by `--exclude EXCLUDE`
+excluding any specified by `-e EXCLUDE`.
 
 optional arguments:
   -h, --help            show this help message and exit

@@ -335,7 +335,7 @@ def setup_dist_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    _setup_location(directory, ("-q dist_info", "-q egg_info"))
+    _setup_location(directory, ("-q egg_info", "-q dist_info"))
 
 
 def _reload_distribution_information(

@@ -54,7 +54,7 @@ def main() -> None:
             "This command will uninstall all distributions "
             "installed in the same environment as that from which this "
             "command is executed, excluding any specified by "
-            "`--exclude EXCLUDE`"
+            "`-e EXCLUDE`"
         ),
     )
     parser.add_argument(
