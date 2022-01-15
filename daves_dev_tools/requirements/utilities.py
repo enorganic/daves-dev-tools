@@ -335,7 +335,7 @@ def setup_dist_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    _setup_location(directory, ("-q egg_info", "-q dist_info"))
+    _setup_location(directory, ("-q dist_info", "-q egg_info"))
 
 
 def _reload_distribution_information(
@@ -531,6 +531,49 @@ def install_requirement(
     return _install_requirement(requirement, echo=echo)
 
 
+def _install_requirement_string(
+    requirement_string: str,
+    name: str = "",
+    is_editable: bool = False,
+    echo: bool = False,
+) -> None:
+    uncaught_error: Optional[Exception] = None
+    flags: str
+    for flags in chain(
+        ("--user ", ""),
+        (
+            ("--user --force-reinstall ", "--force-reinstall ")
+            if is_editable
+            else ()
+        ),
+    ):
+        try:
+            run(
+                (
+                    f"{quote(sys.executable)} -m pip install {flags}"
+                    f"{quote(requirement_string)}"
+                ),
+                echo=echo,
+            )
+            uncaught_error = None
+            break
+        except OSError as error:
+            if (uncaught_error is None) or (not flags):
+                uncaught_error = error
+    if uncaught_error is not None:
+        append_exception_text(
+            uncaught_error,
+            (
+                f"\nCould not install {name}"
+                if name == requirement_string
+                else (f"\nCould not install {name} from {requirement_string}")
+            )
+            if name
+            else (f"\nCould not install {requirement_string}"),
+        )
+        raise uncaught_error
+
+
 def _install_requirement(
     requirement: Union[Requirement, pkg_resources.Requirement],
     echo: bool = True,
@@ -558,37 +601,12 @@ def _install_requirement(
             requirement_string = (
                 f"{requirement_string}[{','.join(requirement.extras)}]"
             )
-    # First attempt a user install, then a system install
-    try:
-        run(
-            (
-                f"{quote(sys.executable)} -m pip install --user "
-                f"{quote(requirement_string)}"
-            ),
-            echo=echo,
-        )
-    except OSError:
-        try:
-            # If a user installation failed, attempt a system installation
-            run(
-                (
-                    f"{quote(sys.executable)} -m pip install "
-                    f"{quote(requirement_string)}"
-                ),
-                echo=echo,
-            )
-        except OSError as error:
-            append_exception_text(
-                error,
-                (
-                    f"\nCould not install {name}"
-                    if name == requirement_string
-                    else (
-                        f"\nCould not install {name} from {requirement_string}"
-                    )
-                ),
-            )
-            raise error
+    _install_requirement_string(
+        requirement_string=requirement_string,
+        name=name,
+        is_editable=is_editable,
+        echo=echo,
+    )
     # Refresh the metadata
     if distribution:
         _reload_distribution_information(distribution)
