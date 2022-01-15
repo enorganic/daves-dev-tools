@@ -534,7 +534,7 @@ def install_requirement(
 def _install_requirement_string(
     requirement_string: str,
     name: str = "",
-    is_editable: bool = False,
+    editable: bool = False,
     echo: bool = False,
 ) -> None:
     uncaught_error: Optional[Exception] = None
@@ -543,7 +543,7 @@ def _install_requirement_string(
         ("--user ", ""),
         (
             ("--user --force-reinstall ", "--force-reinstall ")
-            if is_editable
+            if editable
             else ()
         ),
     ):
@@ -604,7 +604,7 @@ def _install_requirement(
     _install_requirement_string(
         requirement_string=requirement_string,
         name=name,
-        is_editable=is_editable,
+        editable=editable,
         echo=echo,
     )
     # Refresh the metadata
