@@ -2,9 +2,6 @@ import functools
 import runpy
 import sys
 import os
-from tempfile import gettempdir
-from datetime import datetime
-from shutil import rmtree
 from collections import deque
 from pipes import quote
 from itertools import chain
@@ -584,4 +581,3 @@ def sys_argv_get(
         )
     except StopIteration:
         return default
-
