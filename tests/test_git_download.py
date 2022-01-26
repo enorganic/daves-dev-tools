@@ -22,13 +22,16 @@ class TestGitDownload(unittest.TestCase):
         if os.name == "nt" and ("CI" in os.environ):
             # Github Windows test runners temp directory isn't writable for
             # some reason, so we create a temp directory under the current
-            # directory
+            # directory, and plug it into the environment variables
+            # from which python looks for a temp directory
             temp_directory = os.path.join(
                 os.path.abspath(os.path.curdir), "TEMP"
             )
             os.makedirs(temp_directory, exist_ok=True)
-        else:
-            temp_directory = mkdtemp(prefix="test_git_download_")
+            os.environ["TMPDIR"] = os.environ["TEMP"] = os.environ[
+                "TMP"
+            ] = temp_directory
+        temp_directory = mkdtemp(prefix="test_git_download_")
         current_directory: str = os.path.abspath(os.path.curdir)
         os.chdir(PROJECT_DIRECTORY)
         try:
