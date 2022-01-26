@@ -18,7 +18,17 @@ class TestGitDownload(unittest.TestCase):
     """
 
     def test_git_download(self) -> None:
-        temp_directory: str = mkdtemp(prefix="test_git_download_")
+        temp_directory: str
+        if os.name == "nt" and ("CI" in os.environ):
+            # Github Windows test runners temp directory isn't writable for
+            # some reason, so we create a temp directory under the current
+            # directory
+            temp_directory = os.path.join(
+                os.path.abspath(os.path.curdir), "TEMP"
+            )
+            os.makedirs(temp_directory, exist_ok=True)
+        else:
+            temp_directory = mkdtemp(prefix="test_git_download_")
         current_directory: str = os.path.abspath(os.path.curdir)
         os.chdir(PROJECT_DIRECTORY)
         try:

@@ -13,7 +13,6 @@ def download(
     files: Iterable[str] = ("**"),
     directory: str = "",
     branch: str = "",
-    echo: bool = False,
 ) -> List[str]:
     """
     Download files from a git repository and return a list of the files
