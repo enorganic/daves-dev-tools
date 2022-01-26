@@ -1,7 +1,8 @@
 import unittest
 import os
+from tempfile import mkdtemp
 from shutil import rmtree
-from daves_dev_tools.utilities import run, create_timestamped_temp_directory
+from daves_dev_tools.utilities import run
 from daves_dev_tools.git.download import download
 
 
@@ -17,9 +18,7 @@ class TestGitDownload(unittest.TestCase):
     """
 
     def test_git_download(self) -> None:
-        temp_directory: str = create_timestamped_temp_directory(
-            "test_git_download_"
-        )
+        temp_directory: str = mkdtemp(prefix="test_git_download_")
         current_directory: str = os.path.abspath(os.path.curdir)
         os.chdir(PROJECT_DIRECTORY)
         try:
