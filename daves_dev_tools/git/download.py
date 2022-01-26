@@ -1,11 +1,12 @@
 import argparse
 import os
+from tempfile import mkdtemp
 from itertools import chain
 from glob import glob
 from pipes import quote
 from shutil import rmtree
 from typing import Iterable, List
-from ..utilities import create_timestamped_temp_directory, run
+from ..utilities import run
 
 
 def download(
@@ -33,10 +34,7 @@ def download(
     if not directory:
         directory = os.path.curdir
     directory = os.path.abspath(directory)
-    temp_directory: str = create_timestamped_temp_directory("git_download_")
-    if os.name == "nt":
-        # Git requires forward-slashes, even for Windows
-        temp_directory = temp_directory.replace("\\", "/")
+    temp_directory: str = mkdtemp("git_download_")
     # Shallow clone into a temp directory
     command: str = (
         f"git clone {quote(repo)} {quote(temp_directory)} "

@@ -585,19 +585,3 @@ def sys_argv_get(
     except StopIteration:
         return default
 
-
-def create_timestamped_temp_directory(prefix: str = "") -> str:
-    """
-    Create and return the path to an empty temporary directory
-    """
-    sub_directory_name: str = (
-        datetime.now().isoformat(sep="-").replace(":", "-").replace(".", "-")
-    )
-    if prefix:
-        sub_directory_name = f"{prefix}{sub_directory_name}"
-    timestamped_temp_directory: str = os.path.join(
-        os.path.abspath(gettempdir()), sub_directory_name
-    )
-    rmtree(timestamped_temp_directory, ignore_errors=True)
-    os.makedirs(timestamped_temp_directory)
-    return timestamped_temp_directory
