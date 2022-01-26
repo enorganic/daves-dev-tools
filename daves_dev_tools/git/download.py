@@ -34,6 +34,9 @@ def download(
         directory = os.path.curdir
     directory = os.path.abspath(directory)
     temp_directory: str = create_timestamped_temp_directory("git_download_")
+    if os.name == "nt":
+        # The target directory cannot be pre-existing for Windows
+        rmtree(temp_directory, ignore_errors=True)
     # Shallow clone into a temp directory
     command: str = (
         f"git clone {quote(repo)} {quote(temp_directory)} "
