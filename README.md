@@ -223,7 +223,7 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### daves-dev-tools uninstall-all
+#### daves-dev-tools uninstall-all
 
 ```text
 $ daves-dev-tools uninstall-all -h 
@@ -244,7 +244,7 @@ optional arguments:
 
 #### daves-dev-tools install-editable
 
-```
+```text
 $ daves-dev-tools install-editable -h
 usage: daves-dev-tools install-editable [-h] [-d DIRECTORY] [-e EXCLUDE] [-edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION] [-dr]
                                         [-ie]
@@ -273,4 +273,32 @@ optional arguments:
   -dr, --dry-run        Print, but do not execute, all `pip install` commands
   -ie, --include-extras
                         Install all extras for all discovered distributions
+```
+
+#### daves-dev-tools git download
+
+```text
+$ daves-dev-tools git download -h
+usage: daves-dev-tools git download [-h] [-b BRANCH] [-d DIRECTORY] [-e]
+                                    repo [file [file ...]]
+
+Download files from a git repository matching one or more specified file names
+or glob patterns
+
+positional arguments:
+  repo                  Reference repository
+  file                  One or more `glob` pattern(s) indicating a specific
+                        file or files to include. If not provided, all files
+                        in the repository will be included.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -b BRANCH, --branch BRANCH
+                        Retrieve files from BRANCH instead of the remote's
+                        HEAD
+  -d DIRECTORY, --directory DIRECTORY
+                        The directory under which to save matched files. If
+                        not provided, files will be saved under the current
+                        directory.
+  -e, --echo            Print the downloaded file paths
 ```
