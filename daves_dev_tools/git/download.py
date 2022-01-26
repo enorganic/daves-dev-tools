@@ -1,12 +1,11 @@
 import argparse
 import os
+from subprocess import check_call
 from tempfile import mkdtemp
 from itertools import chain
 from glob import glob
-from pipes import quote
 from shutil import rmtree
 from typing import Iterable, List
-from ..utilities import run
 
 
 def download(
@@ -34,15 +33,15 @@ def download(
     if not directory:
         directory = os.path.curdir
     directory = os.path.abspath(directory)
-    temp_directory: str = mkdtemp("git_download_")
     # Shallow clone into a temp directory
-    command: str = (
-        f"git clone {quote(repo)} {quote(temp_directory)} "
-        "--depth 1 --single-branch "
+    temp_directory: str = mkdtemp(prefix="git_download_")
+    check_call(
+        (
+            ("git", "clone", "--depth", "1", "--single-branch")
+            + (("-b", branch) if branch else ())
+            + (repo, temp_directory)
+        )
     )
-    if branch:
-        command = f"{command} -b {quote(branch)}"
-    run(command, echo=echo)
     # Remove the git directory, so those files aren't accidentally matched
     rmtree(os.path.join(temp_directory, ".git"))
     current_directory: str = os.path.abspath(os.path.curdir)
