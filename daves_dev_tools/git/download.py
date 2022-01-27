@@ -42,7 +42,7 @@ def download(
         )
     )
     # Remove the git directory, so those files aren't accidentally matched
-    rmtree(os.path.join(temp_directory, ".git"))
+    rmtree(os.path.join(temp_directory, ".git"), ignore_errors=True)
     current_directory: str = os.path.abspath(os.path.curdir)
     path: str
     try:
@@ -59,7 +59,7 @@ def download(
         new_path = os.path.join(directory, os.path.basename(path))
         os.rename(path, new_path)
         downloaded_paths.append(new_path)
-    rmtree(temp_directory)
+    rmtree(temp_directory, ignore_errors=True)
     return downloaded_paths
 
 

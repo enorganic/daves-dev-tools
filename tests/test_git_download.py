@@ -44,7 +44,7 @@ class TestGitDownload(unittest.TestCase):
                 assert path.endswith(".py")
         finally:
             os.chdir(current_directory)
-            rmtree(temp_directory)
+            rmtree(temp_directory, ignore_errors=True)
 
 
 if __name__ == "__main__":
