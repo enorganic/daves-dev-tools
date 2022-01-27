@@ -48,7 +48,7 @@ def _absolute_sub_directories(
 
 
 def get_ignored_files(
-    root_directory: str = ".",
+    directory: str = ".",
     exclude_directories: FrozenSet[str] = frozenset(),
 ) -> Iterable[str]:
     """
@@ -62,34 +62,34 @@ def get_ignored_files(
       sub-directories to exclude.
     """
     path: str
-    directory_name: str
+    sub_directory_name: str
     directories_files: Dict[str, Set[str]] = {}
     paths: Set[str]
-    root_directory = os.path.abspath(root_directory)
+    directory = os.path.abspath(directory)
     exclude_directories = _absolute_sub_directories(
-        root_directory, exclude_directories
+        directory, exclude_directories
     )
-    path_prefix: str = f'{root_directory.rstrip("/")}/'
+    path_prefix: str = f'{directory.rstrip("/")}/'
     path_prefix_length: int = len(path_prefix)
-    quoted_root_dir: str = quote(root_directory)
+    quoted_root_dir: str = quote(directory)
     for path in run(
         f"git add {quoted_root_dir} && git ls-files -o {quoted_root_dir}",
         echo=False,
     ).split("\n"):
         path = os.path.abspath(f"./{path}")
         if not _is_excluded(path, exclude_directories):
-            directory_name = ""
+            sub_directory_name = ""
             if "/" in path[path_prefix_length:]:
-                directory_name = path[path_prefix_length:].split("/")[0]
-            if directory_name not in directories_files:
-                directories_files[directory_name] = set()
-            directories_files[directory_name].add(path)
-    for directory_name, paths in directories_files.items():
+                sub_directory_name = path[path_prefix_length:].split("/")[0]
+            if sub_directory_name not in directories_files:
+                directories_files[sub_directory_name] = set()
+            directories_files[sub_directory_name].add(path)
+    for sub_directory_name, paths in directories_files.items():
         number_of_files: int = len(paths)
         print(
             f"Found {number_of_files} ignored "
             f'file{"s" if number_of_files > 1 else ""} in ./'
-            f"{directory_name}"
+            f"{sub_directory_name}"
         )
         for path in paths:
             yield path
@@ -109,7 +109,7 @@ def delete_empty_directories(
       A set of top-level directory names to exclude
     """
     number_of_deleted_directories: int = 0
-    root: str
+    directory: str
     directories: Sequence[str]
     files: Sequence[str]
     if not _recurrence:
@@ -117,15 +117,17 @@ def delete_empty_directories(
         exclude_directories = _absolute_sub_directories(
             root_directory, exclude_directories
         )
-    for root, directories, files in os.walk(root_directory, topdown=False):
-        root = os.path.abspath(root)
-        if not _is_excluded(root, exclude_directories):
+    for directory, directories, files in os.walk(
+        root_directory, topdown=False
+    ):
+        directory = os.path.abspath(directory)
+        if not _is_excluded(directory, exclude_directories):
             if not any(
                 filter(
                     lambda name: name != ".DS_Store", chain(directories, files)
                 )
             ):
-                shutil.rmtree(root)
+                shutil.rmtree(directory)
                 number_of_deleted_directories += 1
     if number_of_deleted_directories:
         number_of_deleted_directories += delete_empty_directories(
@@ -152,7 +154,7 @@ def delete_ignored(
       which should not be touched.
     """
     for path in get_ignored_files(
-        root_directory=root_directory, exclude_directories=exclude_directories
+        directory=root_directory, exclude_directories=exclude_directories
     ):
         os.remove(path)
 
@@ -198,15 +200,15 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "root",
+        "directory",
         type=str,
         default=".",
         nargs="?",
-        help="The root directory path for the project.",
+        help="The root directory for the project.",
     )
     arguments: argparse.Namespace = parser.parse_args()
     clean(
-        root_directory=arguments.root,
+        root_directory=arguments.directory,
         exclude_directories=(
             frozenset(os.path.split(arguments.exclude))
             if arguments.exclude

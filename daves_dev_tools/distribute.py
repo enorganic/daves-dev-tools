@@ -23,8 +23,10 @@ except ImportError:
 lru_cache: Callable[..., Any] = functools.lru_cache
 
 
-def _list_dist(root: str, modified_at_or_after: float = 0.0) -> FrozenSet[str]:
-    dist_root: str = os.path.join(root, "dist")
+def _list_dist(
+    directory: str, modified_at_or_after: float = 0.0
+) -> FrozenSet[str]:
+    dist_root: str = os.path.join(directory, "dist")
     dist_file: str
     dist_sub_directories: List[str]
     dist_files: Iterable[str]
@@ -52,18 +54,18 @@ def _list_dist(root: str, modified_at_or_after: float = 0.0) -> FrozenSet[str]:
         return frozenset()
 
 
-def _setup(root: str) -> FrozenSet[str]:
+def _setup(directory: str) -> FrozenSet[str]:
     start_time: float = time()
     current_directory: str = os.path.abspath(os.path.curdir)
-    os.chdir(root)
+    os.chdir(directory)
     try:
-        abs_setup: str = os.path.join(root, "setup.py")
+        abs_setup: str = os.path.join(directory, "setup.py")
         setup_args: List[str] = ["sdist", "bdist_wheel"]
         print(f'{sys.executable} {abs_setup} {" ".join(setup_args)}')
         run_setup(abs_setup, setup_args)
     finally:
         os.chdir(current_directory)
-    return _list_dist(root, modified_at_or_after=start_time)
+    return _list_dist(directory, modified_at_or_after=start_time)
 
 
 def _get_help() -> bool:
@@ -82,6 +84,20 @@ def _get_help() -> bool:
                 "                    [-cup CERBERUS_USERNAME_PATH]\n"
                 "                    [-cpp CERBERUS_PASSWORD_PATH]\n"
                 "                   "
+            ),
+            help_,
+        )
+        help_ = re.sub(
+            (
+                r"(\n\s*)dist \[dist \.\.\.\](?:.|\n)+"
+                r"(\npositional arguments:\s*\n\s*)(?:.|\n)+"
+                r"(\noptional arguments:\s*\n)"
+            ),
+            (
+                r"\1[directory]"
+                r"\n\2directory             "
+                "The root directory path for the project."
+                r"\n\3"
             ),
             help_,
         )
@@ -173,20 +189,22 @@ def _get_credentials_from_cerberus() -> None:
     )
 
 
-def _dist(root: str, distributions: FrozenSet[str], echo: bool = True) -> None:
+def _dist(
+    directory: str, distributions: FrozenSet[str], echo: bool = True
+) -> None:
     run_module_as_main(
         "twine",
         arguments=(["upload"] + sys.argv[1:] + list(sorted(distributions))),
-        directory=root,
+        directory=directory,
         echo=False,
     )
 
 
-def _cleanup(root: str) -> None:
+def _cleanup(directory: str) -> None:
     current_directory: str = os.path.abspath(os.path.curdir)
-    os.chdir(root)
+    os.chdir(directory)
     try:
-        run_setup(os.path.join(root, "setup.py"), ["clean", "--all"])
+        run_setup(os.path.join(directory, "setup.py"), ["clean", "--all"])
     finally:
         os.chdir(current_directory)
 
@@ -194,12 +212,12 @@ def _cleanup(root: str) -> None:
 def main() -> None:
     if not _get_help():
         _get_credentials_from_cerberus()
-        root = sys_argv_pop(depth=2, default=".")  # type: ignore
-        root = os.path.abspath(root).rstrip("/")
+        directory: str = sys_argv_pop(depth=2, default=".")  # type: ignore
+        directory = os.path.abspath(directory).rstrip("/")
         try:
-            _dist(root, _setup(root))
+            _dist(directory, _setup(directory))
         finally:
-            _cleanup(root)
+            _cleanup(directory)
 
 
 if __name__ == "__main__":

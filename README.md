@@ -47,10 +47,10 @@ any explicitly excluded directories (see the CLI help text below).
 
 ```shell script
 $ daves-dev-tools clean -h
-usage: daves-dev-tools [-h] [--exclude EXCLUDE] [root]
+usage: daves-dev-tool clean [-h] [--exclude EXCLUDE] [directory]
 
 positional arguments:
-  root                  The root directory path for the project.
+  directory             The root directory for the project.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -72,13 +72,10 @@ usage: daves-dev-tools distribute [-h] [-cu CERBERUS_URL]
                     [--config-file CONFIG_FILE] [--skip-existing]
                     [--cert path] [--client-cert path] [--verbose]
                     [--disable-progress-bar]
-                    dist [dist ...]
+                    [directory]
 
 positional arguments:
-  dist                  The distribution files to upload to the repository
-                        (package index). Usually dist/* . May additionally
-                        contain a .asc file to include an existing signature
-                        with the file upload.
+  directory             The root directory path for the project.
 
 optional arguments:
   -h, --help            show this help message and exit
