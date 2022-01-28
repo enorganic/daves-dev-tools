@@ -21,19 +21,6 @@ one or more *extras*:
   ```shell
   pip3 install daves-dev-tools[cerberus]
   ```
-
-To install this project for development of *this library*,
-clone this repository (replacing "~/Code", below, with the directory
-under which you want your project to reside), then run `make`:
-
-```shell script
-cd ~/Code && \
-git clone\
- https://github.com/enorganic/daves-dev-tools.git\
- daves-dev-tools && \
-cd daves-dev-tools && \
-make
-```
   
 ## Usage
 
