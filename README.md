@@ -42,24 +42,32 @@ make
 #### daves-dev-tools clean
 
 This command removes all files from your project directory which are ignored
-by git, excepting IDE configuration files (".vscode" and ".idea") and
-any explicitly excluded directories (see the CLI help text below).
+by git, excepting IDE configuration files (".vscode" and ".idea" by default)
+and any explicitly excluded directories (see the CLI help text below).
 
-```shell script
+```text
 $ daves-dev-tools clean -h
-usage: daves-dev-tool clean [-h] [--exclude EXCLUDE] [directory]
+usage: daves-dev-tool clean [-h] [-e EXCLUDE] [-dr] [directory]
+
+This command removes all files from your project directory which are ignored
+by git, unless matching one of the EXCLUDE glob patterns.
 
 positional arguments:
   directory             The root directory for the project.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --exclude EXCLUDE, -e EXCLUDE
-                        A path list of sub-directories to exclude (separated
-                        by ":" or ";", depending on the operating system).
+  -e EXCLUDE, --exclude EXCLUDE
+                        One or more glob patterns indicating files/directories
+                        to exclude from cleanup. The default values are: `-e
+                        .idea -e .vscode -e .git -e venv`.
+  -dr, --dry-run        Instead of executing the cleanup, just print the shell
+                        commands (a list of `rm FILE` commands).
 ```
 
 #### daves-dev-tools distribute
+
+This command 
 
 ```text
 $ daves-dev-tools distribute -h
