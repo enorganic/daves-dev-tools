@@ -28,10 +28,6 @@ one or more *extras*:
 
 #### daves-dev-tools clean
 
-This command removes all files from your project directory which are ignored
-by git, excepting IDE configuration files (".vscode" and ".idea" by default)
-and any explicitly excluded directories (see the CLI help text below).
-
 ```text
 $ daves-dev-tools clean -h
 usage: daves-dev-tool clean [-h] [-e EXCLUDE] [-dr] [directory]
@@ -53,8 +49,6 @@ optional arguments:
 ```
 
 #### daves-dev-tools distribute
-
-This command 
 
 ```text
 $ daves-dev-tools distribute -h
