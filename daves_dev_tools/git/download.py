@@ -3,9 +3,9 @@ import os
 from subprocess import check_call
 from tempfile import mkdtemp
 from itertools import chain
-from glob import glob
 from shutil import rmtree
 from typing import Iterable, List
+from glob import iglob
 
 
 def download(
@@ -49,7 +49,7 @@ def download(
         os.chdir(temp_directory)
         matched_files: Iterable[str] = map(
             lambda path: os.path.join(temp_directory, path),  # type: ignore
-            chain(*map(glob, files)),  # type: ignore
+            chain(*map(iglob, files)),  # type: ignore
         )
     finally:
         os.chdir(current_directory)
