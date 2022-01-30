@@ -247,7 +247,29 @@ def _distribution_is_editable(
     return any(map(project_egg_link_exists, sys.path))
 
 
-def _get_setup_py_distribution_name(path: str) -> str:
+def _get_setup_cfg_metadata(path: str, key: str) -> str:
+    if os.path.basename(path).lower() != "setup.cfg":
+        if not os.path.isdir(path):
+            path = os.path.dirname(path)
+        path = os.path.join(path, "setup.cfg")
+    if os.path.isfile(path):
+        parser: ConfigParser = ConfigParser()
+        parser.read(path)
+        if "metadata" in parser:
+            return parser.get("metadata", key, fallback="")
+    return ""
+
+
+def _get_setup_py_metadata(path: str, args: str) -> str:
+    """
+    Execute a setup.py script with `args` and return the response.
+
+    Parameters:
+
+    - path (str)
+    - args (str)
+    """
+    value: str = ""
     current_directory: str = os.path.abspath(os.curdir)
     directory: str = path
     try:
@@ -259,38 +281,26 @@ def _get_setup_py_distribution_name(path: str) -> str:
                 directory = os.path.dirname(path)
             os.chdir(directory)
             path = os.path.join(directory, "setup.py")
-        command: str = f"{quote(sys.executable)} {quote(path)} --name"
-        name: str
-        try:
-            name = run(command, echo=False).strip().split("\n")[-1]
-        except Exception:
-            # re-write distribution and egg information and attempt to
-            # get the name again
-            setup_dist_egg_info(directory)
+        if os.path.isfile(path):
+            command: str = f"{quote(sys.executable)} {quote(path)} {args}"
             try:
-                run(command, echo=False).strip().split("\n")[-1]
+                value = run(command, echo=False).strip().split("\n")[-1]
             except Exception:
-                warn(
-                    f"A package name could not be found in {directory}\n"
-                    f"Error ignored: {get_exception_text()}"
-                )
-                name = ""
+                # re-write distribution and egg information and attempt to
+                # get the name again
+                setup_dist_egg_info(directory)
+                try:
+                    value = run(command, echo=False).strip().split("\n")[-1]
+                except Exception:
+                    warn(
+                        f"A package name could not be found in {directory}\n"
+                        f"Error ignored: {get_exception_text()}"
+                    )
+        else:
+            warn("No setup.py file found")
     finally:
         os.chdir(current_directory)
-    return name
-
-
-def _get_setup_cfg_distribution_name(path: str) -> str:
-    if os.path.basename(path).lower() != "setup.cfg":
-        if not os.path.isdir(path):
-            path = os.path.dirname(path)
-        path = os.path.join(path, "setup.cfg")
-    if os.path.isfile(path):
-        parser: ConfigParser = ConfigParser()
-        parser.read(path)
-        if "metadata" in parser:
-            return parser.get("metadata", "name", fallback="")
-    return ""
+    return value
 
 
 def get_setup_distribution_name(path: str) -> str:
@@ -298,8 +308,17 @@ def get_setup_distribution_name(path: str) -> str:
     Get a distribution's name from setup.py or setup.cfg
     """
     return normalize_name(
-        _get_setup_cfg_distribution_name(path)
-        or _get_setup_py_distribution_name(path)
+        _get_setup_cfg_metadata(path, "name")
+        or _get_setup_py_metadata(path, "--name")
+    )
+
+
+def get_setup_distribution_version(path: str) -> str:
+    """
+    Get a distribution's version from setup.py or setup.cfg
+    """
+    return _get_setup_cfg_metadata(path, "version") or _get_setup_py_metadata(
+        path, "--version"
     )
 
 
@@ -382,18 +401,6 @@ def setup_egg_info(directory: str) -> None:
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
     return _setup_location(directory, "-q egg_info")
-
-
-def get_setup_distribution_requirements(
-    path: str,
-) -> Dict[str, Tuple[str, ...]]:
-    """
-    Get a distribution's name from setup.py or setup.cfg
-    """
-    return normalize_name(
-        _get_setup_py_distribution_name(path)
-        or _get_setup_cfg_distribution_name(path)
-    )
 
 
 def _get_location_distribution_name(location: str) -> str:

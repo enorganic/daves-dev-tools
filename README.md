@@ -288,3 +288,23 @@ optional arguments:
                         directory.
   -e, --echo            Print the downloaded file paths
 ```
+
+#### daves-dev-tools git tag-version
+
+```text
+$ daves-dev-tools git tag-version -h
+usage: daves-dev-tools git tag-version [-h] [-m MESSAGE] [directory]
+
+Tag your repo with the python package version, if a tag for that version
+doesn't already exist.
+
+positional arguments:
+  directory             Your project directory. If not provided, the current
+                        directory will be used.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m MESSAGE, --message MESSAGE
+                        The tag message. If not provided, the new version
+                        number is used.
+```
