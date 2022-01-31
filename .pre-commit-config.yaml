@@ -16,8 +16,8 @@ repos:
     stages:
     - push
   - id: git-push-tags
-    name: git push --tags
-    entry: git push --tags
+    name: git push --no-verify --tags
+    entry: git push --no-verify --tags
     language: system
     pass_filenames: false
     always_run: true
