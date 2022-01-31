@@ -12,7 +12,7 @@ repos:
     entry: daves-dev-tools git tag-version && git push --tags
     language: system
     pass_filenames: false
-    files: ^(setup\.cfg|setup\.py)$
+    always_run: true
     stages:
     - push
   - id: make requirements
