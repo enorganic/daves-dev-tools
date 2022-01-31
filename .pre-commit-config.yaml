@@ -7,9 +7,17 @@ repos:
   - id: trailing-whitespace
 - repo: local
   hooks:
-  - id: daves-dev-tools git tag-version
+  - id: daves-dev-tools-tag-version
     name: daves-dev-tools git tag-version
-    entry: daves-dev-tools git tag-version && git push --tags
+    entry: daves-dev-tools git tag-version
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages:
+    - push
+  - id: git-push-tags
+    name: git push --tags
+    entry: git push --tags
     language: system
     pass_filenames: false
     always_run: true
