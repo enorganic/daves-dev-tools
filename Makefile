@@ -5,7 +5,9 @@ install:
 	venv/bin/pip3 install\
 	 -r requirements.txt\
 	 -e '.[all]' && \
-	venv/bin/pre-commit install && \
+	venv/bin/pre-commit install\
+	 --hook-type pre-push\
+	 --hook-type pre-commit && \
 	venv/bin/mypy --install-types --non-interactive
 
 clean:
