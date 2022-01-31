@@ -13,7 +13,15 @@ repos:
     - commit
 - repo: local
   hooks:
-  - id: make requirements
+  - id: make-typed
+    name: make typed
+    entry: venv/bin/daves-dev-tools make-typed
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages:
+    - commit
+  - id: make-requirements
     name: make requirements
     entry: make requirements
     language: system
@@ -48,7 +56,7 @@ repos:
     - pyi
     stages:
     - commit
-  - id: daves-dev-tools-tag-version
+  - id: git-tag-version
     name: daves-dev-tools git tag-version
     entry: daves-dev-tools git tag-version
     language: system

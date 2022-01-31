@@ -19,7 +19,7 @@ clean:
 	venv/bin/daves-dev-tools clean
 
 distribute:
-	venv/bin/daves-dev-tools . --skip-existing
+	venv/bin/daves-dev-tools distribute --skip-existing
 
 upgrade:
 	venv/bin/pre-commit autoupdate && \

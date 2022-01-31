@@ -1,0 +1,24 @@
+- id: make-typed
+  name: make-typed
+  entry: daves-dev-tools make-typed
+  language: python
+  pass_filenames: false
+  always_run: true
+  stages:
+  - commit
+- id: git-tag-version
+  name: git-tag-version
+  entry: daves-dev-tools git tag-version
+  language: python
+  pass_filenames: false
+  always_run: true
+  stages:
+  - push
+- id: git-push-tags
+  name: git-push-tags
+  entry: git push --no-verify --tags
+  language: system
+  pass_filenames: false
+  always_run: true
+  stages:
+  - push

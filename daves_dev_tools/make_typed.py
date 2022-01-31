@@ -1,5 +1,7 @@
 import argparse
 import os
+import re
+from io import StringIO
 from pathlib import Path
 from typing import Iterable, IO
 from typing import Tuple
@@ -74,9 +76,15 @@ def _update_setup_cfg(
                 f"{package_directory_data_files}\n{py_typed_path}",
             )
     print(f"Writing {setup_cfg_path}")
+    setup_cfg: str
     setup_cfg_io: IO[str]
-    with open(setup_cfg_path, "w") as setup_cfg_io:
+    with StringIO() as setup_cfg_io:
         parser.write(setup_cfg_io)
+        setup_cfg_io.seek(0)
+        setup_cfg = re.sub(r"[ ]+(\n|$)", r"\1", setup_cfg_io.read()).strip()
+        setup_cfg = f"{setup_cfg}\n"
+    with open(setup_cfg_path, "w") as setup_cfg_io:
+        setup_cfg_io.write(setup_cfg)
 
 
 def make_typed(path: str = ".") -> None:
