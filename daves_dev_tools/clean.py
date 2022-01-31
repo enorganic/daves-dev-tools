@@ -121,18 +121,15 @@ def get_ignored_files(
       files and sub-directories to exclude.
     """
     quoted_directory: str = quote(os.path.abspath(directory))
-    return (
-        set(
-            run(
-                (
-                    f"git add {quoted_directory} && "
-                    f"git ls-files -o {quoted_directory}"
-                ),
-                echo=False,
-            ).split("\n")
-        )
-        - _get_directory_globs_files(directory, exclude, recursive=True)
-    )
+    return set(
+        run(
+            (
+                f"git add {quoted_directory} && "
+                f"git ls-files -o {quoted_directory}"
+            ),
+            echo=False,
+        ).split("\n")
+    ) - _get_directory_globs_files(directory, exclude, recursive=True)
 
 
 def _is_sub_directory_excluded(

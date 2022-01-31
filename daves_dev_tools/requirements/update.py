@@ -2,6 +2,7 @@ import os
 import argparse
 import tomli
 import tomli_w
+import re
 from io import StringIO
 from dataclasses import dataclass
 from pkg_resources import Distribution
@@ -232,11 +233,13 @@ def get_updated_setup_cfg(
                 unique_everseen([""] + all_extra_requirements)
             )
     # Return as a string
+    setup_cfg: str
     setup_cfg_io: IO[str]
     with StringIO() as setup_cfg_io:
         parser.write(setup_cfg_io)
         setup_cfg_io.seek(0)
-        return setup_cfg_io.read()
+        setup_cfg = re.sub(r"[ ]+(\n|$)", r"\1", setup_cfg_io.read()).strip()
+        return f"{setup_cfg}\n"
 
 
 def get_updated_tox_ini(data: str, ignore: Iterable[str] = ()) -> str:
@@ -288,11 +291,13 @@ def get_updated_tox_ini(data: str, ignore: Iterable[str] = ()) -> str:
     # Update
     list(map(update_section, parser.sections()))
     # Return as a string
+    tox_ini: str
     tox_ini_io: IO[str]
     with StringIO() as tox_ini_io:
         parser.write(tox_ini_io)
         tox_ini_io.seek(0)
-        return tox_ini_io.read()
+        tox_ini = re.sub(r"[ ]+(\n|$)", r"\1", tox_ini_io.read()).strip()
+        return f"{tox_ini}\n"
 
 
 def get_updated_pyproject_toml(

@@ -1,0 +1,52 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+  - id: check-yaml
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+- repo: local
+  hooks:
+  - id: daves-dev-tools git tag-version
+    name: daves-dev-tools git tag-version
+    entry: daves-dev-tools git tag-version && git push --tags
+    language: system
+    pass_filenames: false
+    files: ^(setup\.cfg|setup\.py)$
+    stages:
+    - push
+  - id: make requirements
+    name: make requirements
+    entry: make requirements
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages:
+    - commit
+  - id: black
+    name: black
+    entry: venv/bin/black
+    language: system
+    types_or:
+    - python
+    - pyi
+    stages:
+    - commit
+  - id: mypy
+    name: mypy
+    entry: venv/bin/mypy
+    language: system
+    types_or:
+    - python
+    - pyi
+    stages:
+    - commit
+  - id: flake8
+    name: flake8
+    entry: venv/bin/flake8
+    language: system
+    types_or:
+    - python
+    - pyi
+    stages:
+    - commit

@@ -21,7 +21,7 @@ one or more *extras*:
   ```shell
   pip3 install daves-dev-tools[cerberus]
   ```
-  
+
 ## Usage
 
 ### Command Line Interface
@@ -119,7 +119,7 @@ optional arguments:
                         A Cerberus secure data path (including /key) wherein a
                         password with which to authenticate can be found.
                         If no USERNAME or CERBERUS_USERNAME_PATH is provided,
-                        the last part of this path 
+                        the last part of this path
                         (the secure data path entry key) is inferred as your
                         username. See: https://swoo.sh/3DBW2Vb
 ```
@@ -212,7 +212,7 @@ optional arguments:
 #### daves-dev-tools uninstall-all
 
 ```text
-$ daves-dev-tools uninstall-all -h 
+$ daves-dev-tools uninstall-all -h
 usage: daves-dev-tools uninstall-all [-h] [-e EXCLUDE] [-dr]
 
 This command will uninstall all distributions installed in the same environment as that from which this command is executed,

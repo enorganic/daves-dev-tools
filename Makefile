@@ -5,6 +5,7 @@ install:
 	venv/bin/pip3 install\
 	 -r requirements.txt\
 	 -e '.[all]' && \
+	venv/bin/pre-commit install && \
 	venv/bin/mypy --install-types --non-interactive
 
 clean:
@@ -19,6 +20,7 @@ distribute:
 	venv/bin/daves-dev-tools . --skip-existing
 
 upgrade:
+	venv/bin/pre-commit autoupdate && \
 	venv/bin/daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini requirements.txt\
 	 > .unversioned_requirements.txt && \
