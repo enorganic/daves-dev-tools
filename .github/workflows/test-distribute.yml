@@ -1,4 +1,4 @@
-name: test-distribute
+name: Tests
 on:
   push:
     branches:
