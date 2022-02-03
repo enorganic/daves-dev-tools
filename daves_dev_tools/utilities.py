@@ -5,7 +5,7 @@ import os
 from collections import deque
 from pipes import quote
 from itertools import chain
-from subprocess import CalledProcessError, check_output
+from subprocess import check_output
 from typing import (
     Any,
     Callable,
@@ -18,7 +18,6 @@ from typing import (
     Set,
     overload,
 )
-from .errors import append_exception_text
 
 __all__: List[str] = [
     "lru_cache",
@@ -78,18 +77,15 @@ def run(command: Sequence[str], echo: bool = True) -> str:
         else:
             command_str = " ".join(map(quote, command))
         print(command_str)
-    try:
-        output: str = check_output(
-            command, encoding="utf-8", universal_newlines=True
-        ).strip()
-        if echo:
-            print(output)
-        return output
-    except CalledProcessError as error:
-        append_exception_text(
-            error, ("Error encountered while executing:\n" f"{command}")
-        )
-        raise error
+    output: str = check_output(
+        command,
+        encoding="utf-8",
+        universal_newlines=True,
+        shell=isinstance(command, str),
+    ).strip()
+    if echo:
+        print(output)
+    return output
 
 
 def _dummy_sys_exit(__status: object) -> None:
