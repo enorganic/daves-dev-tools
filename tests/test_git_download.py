@@ -1,8 +1,8 @@
 import unittest
 import os
+from subprocess import check_output
 from tempfile import mkdtemp
 from shutil import rmtree
-from daves_dev_tools.utilities import run
 from daves_dev_tools.git.download import download
 
 
@@ -36,7 +36,11 @@ class TestGitDownload(unittest.TestCase):
         os.chdir(PROJECT_DIRECTORY)
         try:
             # Use this project's repo to test the download command
-            origin: str = run("git remote get-url origin", echo=False)
+            origin: str = check_output(
+                ("git", "remote", "get-url", "origin"),
+                encoding="utf-8",
+                universal_newlines=True,
+            ).strip()
             path: str
             for path in download(
                 origin, files="**/*.py", directory=temp_directory

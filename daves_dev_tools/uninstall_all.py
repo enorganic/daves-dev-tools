@@ -1,7 +1,8 @@
 import argparse
 import sys
+from pipes import quote
 from itertools import chain
-from typing import Iterable
+from typing import Iterable, Tuple
 from .requirements.utilities import (
     get_installed_distributions,
     get_requirements_required_distribution_names,
@@ -35,14 +36,18 @@ def uninstall_all(exclude: Iterable[str] = (), dry_run: bool = False) -> None:
         )
     )
     if uninstall_distribution_names:
-        command: str = (
-            f"{sys.executable} -m "
-            f"pip uninstall -y {uninstall_distribution_names}"
+        command: Tuple[str, ...] = (
+            sys.executable,
+            "-m",
+            "pip",
+            "uninstall",
+            "-y",
+            uninstall_distribution_names,
         )
         if dry_run:
-            print(command)
+            print(" ".join(map(quote, command)))
         else:
-            run(command, echo=True)
+            run(command)
     else:
         print("# No distributions found to uninstall")
 

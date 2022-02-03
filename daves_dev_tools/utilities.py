@@ -5,7 +5,7 @@ import os
 from collections import deque
 from pipes import quote
 from itertools import chain
-from subprocess import getstatusoutput
+from subprocess import CalledProcessError, check_output
 from typing import (
     Any,
     Callable,
@@ -18,6 +18,7 @@ from typing import (
     Set,
     overload,
 )
+from .errors import append_exception_text
 
 __all__: List[str] = [
     "lru_cache",
@@ -58,7 +59,7 @@ def iter_parse_delimited_values(
     return chain(*map(iter_parse_delimited_value_, values))
 
 
-def run(command: str, echo: bool = True) -> str:
+def run(command: Sequence[str], echo: bool = True) -> str:
     """
     This function runs a shell command, raises an error if a non-zero
     exit code is returned, and echo's both the command and output *if*
@@ -66,23 +67,29 @@ def run(command: str, echo: bool = True) -> str:
 
     Parameters:
 
-    - command (str): A shell command
+    - command (str|[str]): A shell command
     - echo (bool) = True: If `True`, the command and the output from the
       command will be printed to stdout
     """
     if echo:
-        print(command)
-    status: int
-    output: str
-    status, output = getstatusoutput(command)
-    # Create an error if a non-zero exit status is encountered
-    if status:
-        raise OSError(output if echo else f"$ {command}\n{output}")
-    else:
-        output = output.strip()
-        if output and echo:
+        command_str: str
+        if isinstance(command, str):
+            command_str = command
+        else:
+            command_str = " ".join(map(quote, command))
+        print(command_str)
+    try:
+        output: str = check_output(
+            command, encoding="utf-8", universal_newlines=True
+        ).strip()
+        if echo:
             print(output)
-    return output
+        return output
+    except CalledProcessError as error:
+        append_exception_text(
+            error, ("Error encountered while executing:\n" f"{command}")
+        )
+        raise error
 
 
 def _dummy_sys_exit(__status: object) -> None:

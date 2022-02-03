@@ -3,9 +3,9 @@ import os
 import tomli
 import pkg_resources
 import importlib_metadata
+from subprocess import check_output, check_call, CalledProcessError
 from collections import deque
 from warnings import warn
-from pipes import quote
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
 from itertools import chain
@@ -260,14 +260,14 @@ def _get_setup_cfg_metadata(path: str, key: str) -> str:
     return ""
 
 
-def _get_setup_py_metadata(path: str, args: str) -> str:
+def _get_setup_py_metadata(path: str, args: Tuple[str, ...]) -> str:
     """
     Execute a setup.py script with `args` and return the response.
 
     Parameters:
 
     - path (str)
-    - args (str)
+    - args ([str])
     """
     value: str = ""
     current_directory: str = os.path.abspath(os.curdir)
@@ -282,15 +282,27 @@ def _get_setup_py_metadata(path: str, args: str) -> str:
             os.chdir(directory)
             path = os.path.join(directory, "setup.py")
         if os.path.isfile(path):
-            command: str = f"{quote(sys.executable)} {quote(path)} {args}"
+            command: Tuple[str, ...] = (sys.executable, path) + args
             try:
-                value = run(command, echo=False).strip().split("\n")[-1]
-            except Exception:
+                value = (
+                    check_output(
+                        command, encoding="utf-8", universal_newlines=True
+                    )
+                    .strip()
+                    .split("\n")[-1]
+                )
+            except CalledProcessError:
                 # re-write distribution and egg information and attempt to
                 # get the name again
                 setup_dist_egg_info(directory)
                 try:
-                    value = run(command, echo=False).strip().split("\n")[-1]
+                    value = (
+                        check_output(
+                            command, encoding="utf-8", universal_newlines=True
+                        )
+                        .strip()
+                        .split("\n")[-1]
+                    )
                 except Exception:
                     warn(
                         f"A package name could not be found in {directory}\n"
@@ -309,7 +321,7 @@ def get_setup_distribution_name(path: str) -> str:
     """
     return normalize_name(
         _get_setup_cfg_metadata(path, "name")
-        or _get_setup_py_metadata(path, "--name")
+        or _get_setup_py_metadata(path, ("--name",))
     )
 
 
@@ -318,21 +330,20 @@ def get_setup_distribution_version(path: str) -> str:
     Get a distribution's version from setup.py or setup.cfg
     """
     return _get_setup_cfg_metadata(path, "version") or _get_setup_py_metadata(
-        path, "--version"
+        path, ("--version",)
     )
 
 
-def _setup(arguments: str) -> None:
+def _setup(arguments: Tuple[str, ...]) -> None:
     try:
-        run(
-            f"{quote(sys.executable)} setup.py {arguments}",
-            echo=False,
-        )
-    except Exception:
+        check_call((sys.executable, "setup.py") + arguments)
+    except CalledProcessError:
         warn(f"Ignoring error: {get_exception_text()}")
 
 
-def _setup_location(location: str, arguments: Iterable[str]) -> None:
+def _setup_location(
+    location: str, arguments: Iterable[Tuple[str, ...]]
+) -> None:
     # If there is no setup.py file, we can't update egg info
     if not os.path.isfile(os.path.join(location, "setup.py")):
         return
@@ -354,7 +365,7 @@ def setup_dist_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    _setup_location(directory, ("-q dist_info", "-q egg_info"))
+    _setup_location(directory, (("-q", "dist_info"), ("-q", "egg_info")))
 
 
 def _reload_distribution_information(
@@ -389,7 +400,7 @@ def setup_dist_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    return _setup_location(directory, "-q dist_info")
+    return _setup_location(directory, (("-q", "dist_info"),))
 
 
 def setup_egg_info(directory: str) -> None:
@@ -400,7 +411,7 @@ def setup_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    return _setup_location(directory, "-q egg_info")
+    return _setup_location(directory, (("-q", "egg_info"),))
 
 
 def _get_location_distribution_name(location: str) -> str:
@@ -545,11 +556,11 @@ def _install_requirement_string(
     echo: bool = False,
 ) -> None:
     uncaught_error: Optional[Exception] = None
-    flags: str
+    flags: Tuple[str, ...]
     for flags in chain(
-        ("--user ", ""),
+        (("--user",), ()),
         (
-            ("--user --force-reinstall ", "--force-reinstall ")
+            (("--user", "--force-reinstall"), ("--force-reinstall",))
             if editable
             else ()
         ),
@@ -557,14 +568,15 @@ def _install_requirement_string(
         try:
             run(
                 (
-                    f"{quote(sys.executable)} -m pip install {flags}"
-                    f"{quote(requirement_string)}"
+                    (sys.executable, "-m", "pip", "install")
+                    + flags
+                    + (requirement_string,)
                 ),
                 echo=echo,
             )
             uncaught_error = None
             break
-        except OSError as error:
+        except CalledProcessError as error:
             if (uncaught_error is None) or (not flags):
                 uncaught_error = error
     if uncaught_error is not None:

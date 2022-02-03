@@ -13,7 +13,8 @@ from typing import (
     Optional,
     Tuple,
 )
-from .utilities import run, sys_argv_get, sys_argv_pop, run_module_as_main
+from subprocess import check_output
+from .utilities import sys_argv_get, sys_argv_pop, run_module_as_main
 
 try:
     from .cerberus import apply_sys_argv_cerberus_arguments
@@ -75,7 +76,11 @@ def _get_help() -> bool:
     and "TWINE_PASSWORD" environment variables.
     """
     if set(sys.argv) & {"-h", "--help", "-H", "--HELP"}:
-        help_: str = run(f"{sys.executable} -m twine upload -h", echo=False)
+        help_: str = check_output(
+            (sys.executable, "-m", "twine" "upload" "-h"),
+            encoding="utf-8",
+            universal_newlines=True,
+        ).strip()
         help_ = re.sub(
             r"\btwine upload\b( \[-h\])?",
             (

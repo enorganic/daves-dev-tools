@@ -4,6 +4,7 @@ This module cleans up files which are ignored by git
 import argparse
 import os
 import shutil
+from subprocess import check_output, check_call
 from collections import deque
 from glob import iglob
 from pipes import quote
@@ -17,7 +18,6 @@ from typing import (
     FrozenSet,
     List,
 )
-from .utilities import run
 
 ROOT_DIRECTORY: str = "."
 DEFAULT_EXCLUDE: Tuple[str, ...] = (
@@ -121,14 +121,15 @@ def get_ignored_files(
       files and sub-directories to exclude.
     """
     quoted_directory: str = quote(os.path.abspath(directory))
+    check_call(("git", "add", quoted_directory))
     return set(
-        run(
-            (
-                f"git add {quoted_directory} && "
-                f"git ls-files -o {quoted_directory}"
-            ),
-            echo=False,
-        ).split("\n")
+        check_output(
+            ("git", "ls-files", "-o", quoted_directory),
+            encoding="utf-8",
+            universal_newlines=True,
+        )
+        .strip()
+        .split("\n")
     ) - _get_directory_globs_files(directory, exclude, recursive=True)
 
 

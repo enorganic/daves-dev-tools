@@ -40,7 +40,7 @@ def _get_requirement_string(
 
 def _iter_find_distributions(
     distribution_names: Set[str],
-    directories: Iterable[str] = ("../"),
+    directories: Iterable[str] = ("../",),
     exclude_directory_regular_expressions: Iterable[
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
@@ -91,7 +91,7 @@ def _iter_find_distributions(
 
 def find_and_install_distributions(
     distribution_names: Set[str],
-    directories: Iterable[str] = ("../"),
+    directories: Iterable[str] = ("../",),
     exclude_directory_regular_expressions: Iterable[
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
@@ -112,12 +112,14 @@ def find_and_install_distributions(
         )
     )
     if requirements:
-        command = (
-            f"{quote(sys.executable)} -m pip install "
-            f"-e {' -e '.join(requirements)}"
-        )
+        command: Tuple[str, ...] = (
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+        ) + tuple(chain(*zip(("-e",) * len(requirements), requirements)))
         if dry_run:
-            print(command)
+            print(" ".join(map(quote, command)))
         else:
             run(command)
 

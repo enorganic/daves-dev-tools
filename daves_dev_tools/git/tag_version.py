@@ -22,7 +22,9 @@ def tag_version(directory: str = os.path.curdir, message: str = "") -> None:
         try:
             tags: Iterable[str] = map(
                 str.strip,
-                check_output(("git", "tag"), encoding="utf-8")
+                check_output(
+                    ("git", "tag"), encoding="utf-8", universal_newlines=True
+                )
                 .strip()
                 .split("\n"),
             )
