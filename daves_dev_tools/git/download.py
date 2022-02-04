@@ -4,15 +4,27 @@ from subprocess import check_call
 from tempfile import mkdtemp
 from itertools import chain
 from shutil import rmtree
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 from glob import iglob
+from ..cerberus import apply_cerberus_path_arguments
+from ..utilities import update_url_user_password
 
 
+@apply_cerberus_path_arguments(
+    "cerberus_url",
+    user="cerberus_user_path",
+    password="cerberus_password_path",
+)
 def download(
     repo: str,
-    files: Iterable[str] = ("**"),
+    files: Iterable[str] = ("**",),
     directory: str = "",
     branch: str = "",
+    user: str = "",
+    password: str = "",
+    cerberus_url: str = "",
+    cerberus_user_path: str = "",
+    cerberus_password_path: str = "",
 ) -> List[str]:
     """
     Download files from a git repository and return a list of the files
@@ -26,11 +38,22 @@ def download(
       directory is used)
     - branch (str): A branch from which to retrieve (if not provided,
       files will be retrieved from HEAD)
+    - user (str) = ""
+    - password (str) = ""
+    - cerberus_url (str) = "": A Cerberus API URL
+    - cerberus_user_path (str) = "":
+      The path to a Cerberus secure drop box secret where the username can be
+      found
+    - cerberus_password_path (str) = "":
+      The path to a Cerberus secure drop box secret where the password can be
+      found
     """
     if isinstance(files, str):
         files = (files,)
     if not directory:
         directory = os.path.curdir
+    if user or password:
+        repo = update_url_user_password(repo, user, password)
     directory = os.path.abspath(directory)
     # Shallow clone into a temp directory
     temp_directory: str = mkdtemp(prefix="git_download_")
@@ -47,9 +70,13 @@ def download(
     path: str
     try:
         os.chdir(temp_directory)
-        matched_files: Iterable[str] = map(
-            lambda path: os.path.join(temp_directory, path),  # type: ignore
-            chain(*map(iglob, files)),  # type: ignore
+        matched_files: Tuple[str, ...] = tuple(
+            map(
+                lambda path: os.path.join(
+                    temp_directory, path  # type: ignore
+                ),
+                chain(*map(iglob, files)),  # type: ignore
+            )
         )
     finally:
         os.chdir(current_directory)

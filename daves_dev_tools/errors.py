@@ -18,7 +18,6 @@ def append_exception_text(error: Exception, message: str) -> None:
     Cause `message` to be appended to an error's exception text.
     """
     last_attribute_name: str
-    repr_last_attribute_value: str
     for last_attribute_name in ("strerror", "msg"):
         last_attribute_value = getattr(error, last_attribute_name, "")
         if last_attribute_value:

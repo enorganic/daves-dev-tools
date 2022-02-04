@@ -2,6 +2,7 @@ import unittest
 import os
 import tomli
 import sys
+import pytest
 from typing import Iterable
 from configparser import ConfigParser
 from packaging.requirements import Requirement
@@ -78,6 +79,7 @@ class TestRequirementsUpdate(unittest.TestCase):
     `daves_dev_tools.requirements.update`
     """
 
+    @pytest.mark.cerberus
     def test_get_updated_setup_cfg(self) -> None:
         """
         Ensure that updating a setup.cfg file occurs without problems

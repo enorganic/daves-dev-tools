@@ -16,10 +16,7 @@ from typing import (
 from subprocess import check_output
 from .utilities import sys_argv_get, sys_argv_pop, run_module_as_main
 
-try:
-    from .cerberus import apply_sys_argv_cerberus_arguments
-except ImportError:
-    apply_sys_argv_cerberus_arguments = None  # type: ignore
+from .cerberus import apply_sys_argv_cerberus_arguments
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -142,10 +139,6 @@ def _get_credentials_from_cerberus() -> None:
     retrieve the repository credentials and apply them to their corresponding
     static arguments.
     """
-    # If this package was not installed with the [cerberus] option, none
-    # this function is not applicable
-    if apply_sys_argv_cerberus_arguments is None:
-        return
     cerberus_password_path_keywords: Tuple[str, str, str, str] = (
         "-cpp",
         "--cerberus-password-path",

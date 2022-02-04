@@ -6,6 +6,7 @@ from collections import deque
 from pipes import quote
 from itertools import chain
 from subprocess import check_output
+from urllib.parse import urlparse, urlunparse, ParseResult, quote as _quote
 from typing import (
     Any,
     Callable,
@@ -27,14 +28,44 @@ __all__: List[str] = [
     "sys_argv_pop",
     "iter_sys_argv_get",
     "sys_argv_get",
+    "update_url_user_password",
 ]
 lru_cache: Callable[..., Any] = functools.lru_cache
-# For backwards compatibility:
-cerberus: Any
-try:
-    from daves_dev_tools import cerberus
-except ImportError:
-    cerberus = None
+
+
+def update_url_user_password(
+    url: str,
+    user: str,
+    password: str = "",
+    quote: Callable[[str], str] = _quote,
+) -> str:
+    """
+    Update a URL's user and password and return the result.
+
+    Parameters:
+
+    - url (str)
+    - user (str)
+    - password (str) = "": (optional)
+    - quote = urllib.parse.quote: A function to use for escaping
+      invalid character (defaults to `urllib.parse.quote`)
+    """
+    assert url and user
+    parse_result: ParseResult = urlparse(url)
+    host: str = parse_result.netloc.rpartition("@")[-1]
+    user_password: str = quote(user)
+    if password:
+        user_password = f"{user_password}:{quote(password)}"
+    return urlunparse(
+        (
+            parse_result.scheme,
+            f"{user_password}@{host}",
+            parse_result.path,
+            parse_result.params,
+            parse_result.query,
+            parse_result.fragment,
+        )
+    )
 
 
 def _iter_parse_delimited_value(value: str, delimiter: str) -> Iterable[str]:

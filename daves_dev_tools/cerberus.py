@@ -1,6 +1,7 @@
 import functools
 import logging
 import sys
+from inspect import Parameter, Signature, signature
 from warnings import warn
 from collections import OrderedDict
 from traceback import format_exception
@@ -15,14 +16,8 @@ from typing import (
     Mapping,
     Union,
 )
-import boto3  # type: ignore
-from botocore.exceptions import (  # type: ignore
-    ClientError,
-    NoCredentialsError,
-)
-from cerberus import CerberusClientException  # type: ignore
-from cerberus.client import CerberusClient  # type: ignore
 from .utilities import sys_argv_pop, iter_sys_argv_pop
+from .errors import append_exception_text
 
 __all__: List[str] = [
     "get_cerberus_secrets",
@@ -30,8 +25,6 @@ __all__: List[str] = [
     "apply_sys_argv_cerberus_arguments",
 ]
 lru_cache: Callable[..., Any] = functools.lru_cache
-# For backwards compatibility:
-sys.modules["daves_dev_tools.utilities.cerberus"] = sys.modules[__name__]
 
 
 @lru_cache()
@@ -50,11 +43,23 @@ def get_cerberus_secrets(
     - **cerberus_url** (str): The Cerberus API endpoint
     - **path** (str): The Cerberus path containing the desired secret(s)
     """
-    if (boto3 is None) or (CerberusClient is None):
-        raise RuntimeError(
-            "The `boto3` and `cerberus-python-client` packages must be "
-            "installed in order to use this function."
+    try:
+        import boto3  # type: ignore
+        from botocore.exceptions import (  # type: ignore
+            ClientError,
+            NoCredentialsError,
         )
+        from cerberus import CerberusClientException  # type: ignore
+        from cerberus.client import CerberusClient  # type: ignore
+    except ImportError as error:
+        append_exception_text(
+            error,
+            (
+                'Please install *daves-dev-tools* with the "cerberus" extra: '
+                "`pip3 install 'daves-dev-tools[cerberus]'`"
+            ),
+        )
+        raise error
     secrets: Optional[Dict[str, str]] = None
     errors: Dict[str, str] = OrderedDict()
     for profile_name in boto3.Session().available_profiles + [None]:
@@ -97,7 +102,6 @@ def get_cerberus_secret(cerberus_url: str, path: str) -> Tuple[str, str]:
     - **path** (str): The Cerberus path containing the desired secret,
       *including* a dictionary key. For example: "path/to/secrets/key".
     """
-    value: str
     parts: List[str] = path.strip("/").split("/")
     # Ensure the path includes the dictionary key
     assert len(parts) == 4
@@ -153,3 +157,105 @@ def apply_sys_argv_cerberus_arguments(
                 keys=cerberus_path_keys, argv=argv, flag=False
             ):
                 argv += [key, get_cerberus_secret(cerberus_url, value)[-1]]
+
+
+def _merge_function_signature_args_kwargs(
+    function_signature: Signature, args: Iterable[Any], kwargs: Dict[str, Any]
+) -> None:
+    """
+    This function merges positional/keyword arguments for a function
+    into the keyword argument dictionary
+    """
+    value: Any
+    parameter: Parameter
+    if args:
+        for parameter, value in zip(
+            function_signature.parameters.values(), args
+        ):
+            assert parameter.kind == Parameter.POSITIONAL_OR_KEYWORD
+            kwargs[parameter.name] = value
+
+
+def _remove_function_signature_inapplicable_kwargs(
+    function_signature: Signature, kwargs: Dict[str, Any]
+) -> None:
+    def get_parameter_name(parameter_: Parameter) -> str:
+        return parameter_.name
+
+    key: str
+    for key in set(kwargs.keys()) - set(
+        map(
+            get_parameter_name,
+            function_signature.parameters.values(),
+        )
+    ):
+        del kwargs[key]
+
+
+def apply_cerberus_path_arguments(
+    cerberus_url_parameter_name: str = "cerberus_url",
+    **cerberus_path_parameter_names: str,
+) -> Callable[..., Callable[..., Any]]:
+    """
+    This decorator maps parameter names. Each key represents the
+    name of a parameter in the decorated function which accepts an explicit
+    input, and the corresponding mapped value is the name of a second parameter
+    which accepts a cerberus path from where a value for the first parameter
+    can be retrieved when not explicitly provided.
+
+    Parameters:
+    - cerberus_url_parameter_name (str) = "cerberus_url":
+      The name of the Cerberus API URL parameter
+    - ** (str): All additional keyword map a
+      *parameter name* -> *cerberus URL parameter name*
+    """
+
+    def decorating_function(
+        function: Callable[..., Any]
+    ) -> Callable[..., Any]:
+        function_signature: Signature = signature(function)
+
+        @functools.wraps(function)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """
+            This function wraps the original and performs lookups for
+            any parameters for which an argument is not passed
+            """
+            # First we consolidate the keyword arguments with any arguments
+            # which are passed to parameters which can be either positional
+            # *or* keyword arguments, and were passed as positional arguments
+            _merge_function_signature_args_kwargs(
+                function_signature, args, kwargs
+            )
+            # For any arguments where we have a cerberus path and do not have
+            # an explicitly passed value, perform a lookup in cerberus
+            key: str
+            for key in set(cerberus_path_parameter_names.keys()) - set(
+                kwargs.keys()
+            ):
+                cerberus_path_key: str = cerberus_path_parameter_names[key]
+                if (cerberus_path_key in kwargs) and kwargs[cerberus_path_key]:
+                    kwargs[key] = get_cerberus_secret(
+                        cerberus_url_parameter_name,
+                        kwargs[cerberus_path_key],
+                    )[1]
+                elif cerberus_path_key in function_signature.parameters:
+                    default: Optional[str] = function_signature.parameters[
+                        cerberus_path_key
+                    ].default
+                    if default:
+                        kwargs[key] = get_cerberus_secret(
+                            cerberus_url_parameter_name,
+                            default,
+                        )[1]
+            # Remove arguments which do not correspond to
+            # any of the function's parameter names
+            _remove_function_signature_inapplicable_kwargs(
+                function_signature, kwargs
+            )
+            # Execute the wrapped function
+            return function(**kwargs)
+
+        return wrapper
+
+    return decorating_function
