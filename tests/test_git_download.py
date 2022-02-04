@@ -9,6 +9,9 @@ from daves_dev_tools.git.download import download
 PROJECT_DIRECTORY: str = os.path.join(
     os.path.dirname(os.path.dirname(__file__))
 )
+RELATIVE_FILE_PATH: str = os.path.relpath(
+    os.path.abspath(__file__), PROJECT_DIRECTORY
+)
 
 
 class TestGitDownload(unittest.TestCase):
@@ -46,11 +49,13 @@ class TestGitDownload(unittest.TestCase):
                 origin, files="**/*.py", directory=temp_directory
             ):
                 assert path.endswith(".py")
+            assert download(
+                origin, files=RELATIVE_FILE_PATH, directory=temp_directory
+            )
         finally:
             os.chdir(current_directory)
             rmtree(temp_directory, ignore_errors=True)
 
 
 if __name__ == "__main__":
-    # unittest.main()
-    TestGitDownload().test_git_download()
+    unittest.main()

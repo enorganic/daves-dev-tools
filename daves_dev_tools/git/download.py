@@ -12,8 +12,8 @@ from ..utilities import update_url_user_password
 
 @apply_cerberus_path_arguments(
     "cerberus_url",
-    user="cerberus_user_path",
-    password="cerberus_password_path",
+    user="user_cerberus_path",
+    password="password_cerberus_path",
 )
 def download(
     repo: str,
@@ -23,8 +23,8 @@ def download(
     user: str = "",
     password: str = "",
     cerberus_url: str = "",
-    cerberus_user_path: str = "",
-    cerberus_password_path: str = "",
+    user_cerberus_path: str = "",
+    password_cerberus_path: str = "",
 ) -> List[str]:
     """
     Download files from a git repository and return a list of the files
@@ -59,7 +59,7 @@ def download(
     temp_directory: str = mkdtemp(prefix="git_download_")
     check_call(
         (
-            ("git", "clone", "--depth", "1", "--single-branch")
+            ("git", "clone", "-q", "--depth", "1", "--single-branch")
             + (("-b", branch) if branch else ())
             + (repo, temp_directory)
         )
@@ -83,7 +83,10 @@ def download(
     downloaded_paths: List[str] = []
     new_path: str
     for path in matched_files:
-        new_path = os.path.join(directory, os.path.basename(path))
+        relative_path: str = os.path.relpath(path, temp_directory)
+        new_path = os.path.join(directory, relative_path)
+        if os.path.sep in relative_path:
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
         os.rename(path, new_path)
         downloaded_paths.append(new_path)
     rmtree(temp_directory, ignore_errors=True)
@@ -117,12 +120,47 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "-e",
-        "--echo",
-        default=False,
-        const=True,
-        action="store_const",
-        help="Print the downloaded file paths",
+        "-u",
+        "--user",
+        default="",
+        type=str,
+        help="A username for accessing the repository",
+    )
+    parser.add_argument(
+        "-p",
+        "--password",
+        default="",
+        type=str,
+        help="A password for accessing the repository",
+    )
+    parser.add_argument(
+        "-cu",
+        "--cerberus-url",
+        default="",
+        type=str,
+        help=(
+            "The base URL of a Cerberus REST API. See: https://swoo.sh/3DBW2Vb"
+        ),
+    )
+    parser.add_argument(
+        "-ucp",
+        "--user-cerberus-path",
+        default="",
+        type=str,
+        help=(
+            "A Cerberus secure data path (including /key) wherein a "
+            "username with which to authenticate can be found."
+        ),
+    )
+    parser.add_argument(
+        "-pcp",
+        "--password-cerberus-path",
+        default="",
+        type=str,
+        help=(
+            "A Cerberus secure data path (including /key) wherein a "
+            "password with which to authenticate can be found."
+        ),
     )
     parser.add_argument("repo", type=str, help="Reference repository")
     parser.add_argument(
@@ -138,9 +176,14 @@ def main() -> None:
     arguments: argparse.Namespace = parser.parse_args()
     download(
         arguments.repo,
-        files=arguments.files or ("**",),
+        files=arguments.file or ("**",),
         directory=arguments.directory,
         branch=arguments.branch,
+        cerberus_url=arguments.cerberus_url,
+        user=arguments.user,
+        password=arguments.password,
+        user_cerberus_path=arguments.user_cerberus_path,
+        password_cerberus_path=arguments.password_cerberus_path,
     )
 
 

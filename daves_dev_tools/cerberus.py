@@ -102,6 +102,7 @@ def get_cerberus_secret(cerberus_url: str, path: str) -> Tuple[str, str]:
     - **path** (str): The Cerberus path containing the desired secret,
       *including* a dictionary key. For example: "path/to/secrets/key".
     """
+    assert cerberus_url
     parts: List[str] = path.strip("/").split("/")
     # Ensure the path includes the dictionary key
     assert len(parts) == 4
@@ -227,6 +228,16 @@ def apply_cerberus_path_arguments(
             _merge_function_signature_args_kwargs(
                 function_signature, args, kwargs
             )
+            cerberus_url: str = ""
+            if cerberus_url_parameter_name in kwargs:
+                cerberus_url = kwargs[cerberus_url_parameter_name]
+            elif cerberus_url_parameter_name in function_signature.parameters:
+                cerberus_url = (
+                    function_signature.parameters[
+                        cerberus_url_parameter_name
+                    ].default
+                    or ""
+                )
             # For any arguments where we have a cerberus path and do not have
             # an explicitly passed value, perform a lookup in cerberus
             key: str
@@ -236,7 +247,7 @@ def apply_cerberus_path_arguments(
                 cerberus_path_key: str = cerberus_path_parameter_names[key]
                 if (cerberus_path_key in kwargs) and kwargs[cerberus_path_key]:
                     kwargs[key] = get_cerberus_secret(
-                        cerberus_url_parameter_name,
+                        cerberus_url,
                         kwargs[cerberus_path_key],
                     )[1]
                 elif cerberus_path_key in function_signature.parameters:
@@ -245,7 +256,7 @@ def apply_cerberus_path_arguments(
                     ].default
                     if default:
                         kwargs[key] = get_cerberus_secret(
-                            cerberus_url_parameter_name,
+                            cerberus_url,
                             default,
                         )[1]
             # Remove arguments which do not correspond to
