@@ -1,5 +1,6 @@
 import unittest
 import os
+from typing import List
 from subprocess import check_output
 from tempfile import mkdtemp
 from shutil import rmtree
@@ -44,14 +45,13 @@ class TestGitDownload(unittest.TestCase):
                 encoding="utf-8",
                 universal_newlines=True,
             ).strip()
-            path: str
-            for path in download(
+            py_paths: List[str] = download(
                 origin, files="**/*.py", directory=temp_directory
-            ):
-                assert path.endswith(".py")
-            assert download(
-                origin, files=RELATIVE_FILE_PATH, directory=temp_directory
             )
+            assert py_paths
+            path: str
+            for path in py_paths:
+                assert path.endswith(".py")
         finally:
             os.chdir(current_directory)
             rmtree(temp_directory, ignore_errors=True)
