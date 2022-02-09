@@ -3,7 +3,7 @@ import os
 import tomli
 import pkg_resources
 import importlib_metadata
-from subprocess import check_output, check_call, CalledProcessError
+from subprocess import check_output, CalledProcessError
 from collections import deque
 from warnings import warn
 from configparser import ConfigParser, SectionProxy
@@ -257,6 +257,10 @@ def _get_setup_cfg_metadata(path: str, key: str) -> str:
         parser.read(path)
         if "metadata" in parser:
             return parser.get("metadata", key, fallback="")
+        else:
+            warn(f"No `metadata` section found in: {path}")
+    else:
+        warn(f"Setup config file not found: {path}")
     return ""
 
 
@@ -292,6 +296,11 @@ def _get_setup_py_metadata(path: str, args: Tuple[str, ...]) -> str:
                     .split("\n")[-1]
                 )
             except CalledProcessError:
+                warn(
+                    f"A package name could not be found in {path}, "
+                    "attempting to refresh distribution and egg info"
+                    f"\nError ignored: {get_exception_text()}"
+                )
                 # re-write distribution and egg information and attempt to
                 # get the name again
                 setup_dist_egg_info(directory)
@@ -305,11 +314,11 @@ def _get_setup_py_metadata(path: str, args: Tuple[str, ...]) -> str:
                     )
                 except Exception:
                     warn(
-                        f"A package name could not be found in {directory}\n"
-                        f"Error ignored: {get_exception_text()}"
+                        f"A package name could not be found in {path}"
+                        f"\nError ignored: {get_exception_text()}"
                     )
         else:
-            warn("No setup.py file found")
+            warn(f"Setup file not found: {path}")
     finally:
         os.chdir(current_directory)
     return value
@@ -336,7 +345,7 @@ def get_setup_distribution_version(path: str) -> str:
 
 def _setup(arguments: Tuple[str, ...]) -> None:
     try:
-        check_call((sys.executable, "setup.py") + arguments)
+        check_output((sys.executable, "setup.py") + arguments)
     except CalledProcessError:
         warn(f"Ignoring error: {get_exception_text()}")
 
