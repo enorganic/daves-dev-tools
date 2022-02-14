@@ -30,7 +30,7 @@ jobs:
     - name: install
       run: python3 -m pip install --user --upgrade -r requirements.txt pip tox -e '.[all]'
     - name: test
-      run: python3 -m tox -p all
+      run: python3 -m tox
   distribute:
     if: github.ref == 'refs/heads/master'
     needs:
@@ -43,7 +43,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: install
-      run: pip3 install --user --upgrade -r requirements.txt pip tox -e '.[all]'
+      run: python3 -m pip install --user --upgrade -r requirements.txt pip tox -e '.[all]'
     - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
