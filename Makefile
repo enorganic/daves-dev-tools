@@ -24,8 +24,9 @@ distribute:
 upgrade:
 	venv/bin/pre-commit autoupdate && \
 	venv/bin/daves-dev-tools requirements freeze\
-	 -nv '*' . pyproject.toml tox.ini requirements.txt\
+	 -nv '*' . pyproject.toml tox.ini \
 	 > .unversioned_requirements.txt && \
+	echo "pre-commit" >> .unversioned_requirements.txt && \
 	venv/bin/pip3 install --upgrade --upgrade-strategy eager\
 	 -r .unversioned_requirements.txt -e '.[all]' && \
 	rm .unversioned_requirements.txt && \
@@ -36,7 +37,9 @@ requirements:
 	 -v\
 	 -aen all\
 	 setup.cfg pyproject.toml tox.ini && \
+	echo "pre-commit" >> .unversioned_requirements.txt && \
 	venv/bin/daves-dev-tools requirements freeze\
 	 -nv setuptools -nv filelock -nv platformdirs\
-	 '.[all]' pyproject.toml tox.ini\
-	 > requirements.txt
+	 '.[all]' pyproject.toml tox.ini .unversioned_requirements.txt\
+	 > requirements.txt && \
+	rm .unversioned_requirements.txt
