@@ -28,7 +28,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: install
-      run: pip3 install --user --upgrade -r requirements.txt pip tox -e '.[all]'
+      run: python3 -m pip install --user --upgrade -r requirements.txt pip tox -e '.[all]'
     - name: test
       run: python3 -m tox -p all
   distribute:
