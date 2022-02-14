@@ -45,7 +45,9 @@ jobs:
       with:
         python-version: '3.x'
     - name: install
-      run: python3 -m pip install --user --upgrade pip tox -r requirements.txt -e '.[all]'
+      run: |
+        python3 -m pip install --upgrade pip tox &&
+        python3 -m pip install --user -r requirements.txt -e '.[all]'
     - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
