@@ -22,7 +22,7 @@ def uninstall_all(exclude: Iterable[str] = (), dry_run: bool = False) -> None:
       to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
     """
     name: str
-    uninstall_distribution_names: str = " ".join(
+    uninstall_distribution_names: Tuple[str, ...] = tuple(
         sorted(
             (
                 set(get_installed_distributions().keys())
@@ -42,8 +42,7 @@ def uninstall_all(exclude: Iterable[str] = (), dry_run: bool = False) -> None:
             "pip",
             "uninstall",
             "-y",
-            uninstall_distribution_names,
-        )
+        ) + uninstall_distribution_names
         if dry_run:
             print(" ".join(map(quote, command)))
         else:
