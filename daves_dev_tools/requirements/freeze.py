@@ -158,7 +158,8 @@ def freeze(
 
     - requirements ([str]): One or more requirement specifiers (for example:
       "requirement-name[extra-a,extra-b]" or ".[extra-a, extra-b]) and/or paths
-      to a setup.cfg, pyproject.toml, tox.ini or requirements.txt file
+      to a setup.py, setup.cfg, pyproject.toml, tox.ini or requirements.txt
+      file
     - exclude ([str]): One or more distributions to exclude/ignore
     - exclude_recursive ([str]): One or more distributions to exclude/ignore.
       Note: Excluding a distribution here excludes all requirements which would
@@ -182,13 +183,30 @@ def freeze(
 
 def main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        prog="daves-dev-tools requirements freeze"
+        prog="daves-dev-tools requirements freeze",
+        description=(
+            "This command prints dependencies inferred from an installed "
+            "distribution or project, in a similar format to the "
+            "output of `pip freeze`, except that all generated requirements "
+            'are specified in the format "distribution-name==0.0.0" '
+            "(including for editable installations). Using this command "
+            "instead of `pip freeze` to generate requirement files ensures "
+            "that you don't bloat your requirements files with superfluous "
+            "distributions."
+        ),
     )
     parser.add_argument(
         "requirement",
         nargs="+",
         type=str,
-        help="One or more requirement specifiers or configuration file paths",
+        help=(
+            "One or more requirement specifiers (for example: "
+            '"requirement-name", "requirement-name[extra-a,extra-b]", '
+            '".[extra-a, extra-b]" or '
+            '"../other-editable-package-directory[extra-a, extra-b]) '
+            "and/or paths to a setup.py, setup.cfg, pyproject.toml, "
+            "tox.ini or requirements.txt file"
+        ),
     )
     parser.add_argument(
         "-e",
@@ -197,8 +215,8 @@ def main() -> None:
         type=str,
         action="append",
         help=(
-            "A comma-separated list of distributions to exclude from the "
-            "output"
+            "A distribution (or comma-separated list of distributions) to "
+            "exclude from the output"
         ),
     )
     parser.add_argument(
@@ -208,9 +226,12 @@ def main() -> None:
         type=str,
         action="append",
         help=(
-            "A comma-separated list of distributions to exclude from the "
-            "output, along with any/all requirements which might have been "
-            "recursively discovered for these packages"
+            "A distribution (or comma-separated list of distributions) to "
+            "exclude from the output. Unlike -e / --exclude, "
+            "this argument also precludes recursive requirement discovery "
+            "for the specified packages, thereby excluding all of the "
+            "excluded package's requirements which are not required by "
+            "another (non-excluded) distribution."
         ),
     )
     parser.add_argument(
