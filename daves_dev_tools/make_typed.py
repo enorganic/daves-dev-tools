@@ -52,29 +52,23 @@ def _update_setup_cfg(
     if not parser.has_section("options"):
         parser.add_section("options")
     parser.set("options", "include_package_data", "True")
-    if not parser.has_section("options.data_files"):
-        parser.add_section("options.data_files")
-    py_typed_path: str
-    for py_typed_path in map(os.path.normpath, py_typed_paths):  # type: ignore
-        package_directory: str = os.path.dirname(py_typed_path)
-        package_directory_data_files: str = parser.get(
-            "options.data_files", package_directory, fallback=""
-        ).rstrip()
-        if py_typed_path in filter(  # type: ignore
-            None,
-            map(
-                os.path.normpath,  # type: ignore
-                map(str.strip, package_directory_data_files.split("\n")),
-            ),
-        ):
-            print(f"Data file already specified in setup.cfg: {py_typed_path}")
-        else:
-            print(f"Adding data file to setup.cfg: {py_typed_path}")
-            parser.set(
-                "options.data_files",
-                package_directory,
-                f"{package_directory_data_files}\n{py_typed_path}",
-            )
+    if not parser.has_section("options.package_data"):
+        parser.add_section("options.package_data")
+    package_data: str = parser.get(
+        "options.package_data", "*", fallback=""
+    ).rstrip()
+    if "py.typed" not in filter(  # type: ignore
+        None,
+        map(
+            os.path.normpath,  # type: ignore
+            map(str.strip, package_data.split("\n")),
+        ),
+    ):
+        parser.set(
+            "options.package_data",
+            "*",
+            "py.typed",
+        )
     print(f"Writing {setup_cfg_path}")
     setup_cfg: str
     setup_cfg_io: IO[str]
