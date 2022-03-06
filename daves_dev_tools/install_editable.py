@@ -5,7 +5,7 @@ import os
 from itertools import chain
 from pkg_resources import Distribution
 from pipes import quote
-from typing import Iterable, Set, List, Tuple, Pattern
+from typing import Iterable, Set, List, Tuple, Pattern, Sequence
 from .requirements.utilities import (
     get_distribution,
     get_installed_distributions,
@@ -97,6 +97,7 @@ def find_and_install_distributions(
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
     dry_run: bool = False,
     include_extras: bool = False,
+    pip_install_arguments: Sequence[str] = (),
 ) -> None:
     requirements: Tuple[str, ...] = tuple(
         map(
@@ -118,6 +119,18 @@ def find_and_install_distributions(
             "pip",
             "install",
         ) + tuple(chain(*zip(("-e",) * len(requirements), requirements)))
+        if pip_install_arguments:
+            if isinstance(pip_install_arguments, str):
+                pip_install_arguments = (pip_install_arguments,)
+            else:
+                pip_install_arguments = tuple(pip_install_arguments)
+            if (
+                "--upgrade-strategy" in pip_install_arguments
+                and "-U" not in pip_install_arguments
+                and "--upgrade" not in pip_install_arguments
+            ):
+                pip_install_arguments += ("-U",)
+            command += pip_install_arguments
         if dry_run:
             print(" ".join(map(quote, command)))
         else:
@@ -133,6 +146,7 @@ def install_editable(
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
     dry_run: bool = False,
     include_extras: bool = False,
+    pip_install_arguments: Sequence[str] = (),
 ) -> None:
     """
     Install, in editable/develop mode, all distributions, except for those
@@ -150,7 +164,9 @@ def install_editable(
       for distributable projects
     - exclude_directory_regular_expressions ([str])
     - dry_run (bool)
-    - include_extras ([str])
+    - include_extras (bool)
+    - pip_install_arguments ([str]): Additional arguments to pass on to
+      `pip install`
     """
     required_distribution_names: Set[str] = (
         get_requirements_required_distribution_names(requirements)
@@ -167,6 +183,7 @@ def install_editable(
         ),
         dry_run=dry_run,
         include_extras=include_extras,
+        pip_install_arguments=pip_install_arguments,
     )
 
 
@@ -181,7 +198,10 @@ def main() -> None:
             "installation will be limited to the dependencies identified "
             "(recursively) by these requirements. Exclusions can be specified "
             "using the `-e` parameter. Directories can be excluded by "
-            "passing regular expressions to the `-edre` parameter."
+            "passing regular expressions to the `-edre` parameter. "
+            "Any arguments passed not matching those specified below "
+            "will be passed on to `pip install` (see `pip install -h` for "
+            "additionally available arguments)."
         ),
     )
     parser.add_argument(
@@ -251,16 +271,19 @@ def main() -> None:
         const=True,
         help="Install all extras for all discovered distributions",
     )
-    arguments: argparse.Namespace = parser.parse_args()
+    namespace: argparse.Namespace
+    unknown_arguments: List[str]
+    namespace, unknown_arguments = parser.parse_known_args()
     install_editable(
-        requirements=arguments.requirement,
-        directories=arguments.directory,
+        requirements=namespace.requirement,
+        directories=namespace.directory,
         exclude_directory_regular_expressions=(
-            arguments.exclude_directory_regular_expression
+            namespace.exclude_directory_regular_expression
         ),
-        exclude=iter_parse_delimited_values(arguments.exclude),
-        dry_run=arguments.dry_run,
-        include_extras=arguments.include_extras,
+        exclude=iter_parse_delimited_values(namespace.exclude),
+        dry_run=namespace.dry_run,
+        include_extras=namespace.include_extras,
+        pip_install_arguments=unknown_arguments,
     )
 
 
