@@ -259,8 +259,6 @@ def _get_setup_cfg_metadata(path: str, key: str) -> str:
             return parser.get("metadata", key, fallback="")
         else:
             warn(f"No `metadata` section found in: {path}")
-    else:
-        warn(f"Setup config file not found: {path}")
     return ""
 
 
@@ -317,8 +315,6 @@ def _get_setup_py_metadata(path: str, args: Tuple[str, ...]) -> str:
                         f"A package name could not be found in {path}"
                         f"\nError ignored: {get_exception_text()}"
                     )
-        else:
-            warn(f"Setup file not found: {path}")
     finally:
         os.chdir(current_directory)
     return value
