@@ -14,7 +14,7 @@ from .requirements.utilities import (
     get_setup_distribution_name,
     is_installed,
 )
-from .utilities import iter_parse_delimited_values, run
+from .utilities import iter_parse_delimited_values, iter_sys_argv_pop, run
 
 
 _SETUP_NAMES: Set[str] = {"setup.cfg", "setup.py"}
@@ -61,6 +61,7 @@ def _iter_find_distributions(
         return True
 
     def iter_find_directory_distributions(directory: str) -> Iterable[str]:
+        print(f"Searching for editable distribution in {directory}")
         sub_directories: List[str]
         files: List[str]
         sub_directories, files = next(iter(os.walk(directory)))[1:3]
@@ -205,12 +206,15 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "requirement",
-        nargs="*",
+        "-r",
+        "--requirement",
+        action="append",
         type=str,
         default=[],
         help=(
-            "One or more requirement specifiers or configuration file paths. "
+            "One or more requirement specifiers, requirement file paths, "
+            "or configuration file paths "
+            "(setup.cfg, setup.py, pyproject.toml, tox.ini, etc.). "
             "If provided, only dependencies of these requirements will be "
             "installed."
         ),
@@ -271,11 +275,14 @@ def main() -> None:
         const=True,
         help="Install all extras for all discovered distributions",
     )
+    # For backwards compatibility, we accept requirements as either
+    # positional or keyword arguments
+    positional_arguments: List[str] = list(iter_sys_argv_pop())
     namespace: argparse.Namespace
     unknown_arguments: List[str]
     namespace, unknown_arguments = parser.parse_known_args()
     install_editable(
-        requirements=namespace.requirement,
+        requirements=namespace.requirement + positional_arguments,
         directories=namespace.directory,
         exclude_directory_regular_expressions=(
             namespace.exclude_directory_regular_expression

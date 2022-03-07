@@ -240,6 +240,11 @@ def iter_sys_argv_pop(
 
 
 @overload
+def iter_sys_argv_pop() -> Iterable[str]:
+    ...
+
+
+@overload
 def iter_sys_argv_pop(
     keys: Optional[Iterable[str]],
     argv: Optional[List[str]],
@@ -367,6 +372,8 @@ def iter_sys_argv_get(
 ) -> Iterable[Union[str, bool]]:
     """
     Yield all values, in reverse order, for an argument, from `sys.argv`.
+    If `keys` are provided, yield values for that keyword argument. If
+    `keys` are *not* provided, yield positional arguments values.
 
     Parameters:
 
@@ -565,8 +572,11 @@ def sys_argv_get(
     depth: int = 1,
 ) -> Union[str, bool, None]:
     """
-    Return the last value for a keyword argument from `sys.argv`, or `None`
-    if there are not any positional arguments.
+    If `keys` are provided: Return the last value for a keyword argument from
+    `sys.argv`, or `None` if the keyword argument is not present.
+
+    If `keys` are *not* provided, return the last positional argument or
+    `None` if there are no positional arguments.
 
     Parameters:
 
