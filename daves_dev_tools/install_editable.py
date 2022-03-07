@@ -61,7 +61,6 @@ def _iter_find_distributions(
         return True
 
     def iter_find_directory_distributions(directory: str) -> Iterable[str]:
-        print(f"Searching for editable distribution in {directory}")
         sub_directories: List[str]
         files: List[str]
         sub_directories, files = next(iter(os.walk(directory)))[1:3]
