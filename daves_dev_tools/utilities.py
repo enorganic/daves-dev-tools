@@ -3,7 +3,7 @@ import runpy
 import sys
 import os
 from collections import deque
-from pipes import quote
+from shlex import quote
 from itertools import chain
 from subprocess import check_output
 from urllib.parse import urlparse, urlunparse, ParseResult, quote as _quote

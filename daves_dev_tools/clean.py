@@ -7,7 +7,6 @@ import shutil
 from subprocess import check_output, check_call
 from collections import deque
 from glob import iglob
-from pipes import quote
 from itertools import chain
 from typing import (
     Dict,
@@ -120,11 +119,12 @@ def get_ignored_files(
     - exclude ({str}) = frozenset(): A `frozenset` of glob patterns for
       files and sub-directories to exclude.
     """
-    quoted_directory: str = quote(os.path.abspath(directory))
-    check_call(("git", "add", quoted_directory))
+    directory = os.path.abspath(directory)
+    check_call(("git", "init", directory))
+    check_call(("git", "add", directory))
     return set(
         check_output(
-            ("git", "ls-files", "-o", quoted_directory),
+            ("git", "ls-files", "-o", directory),
             encoding="utf-8",
             universal_newlines=True,
         )
