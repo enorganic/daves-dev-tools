@@ -3,8 +3,8 @@ install:
 	(python3.6 -m venv venv || python3 -m venv venv || \
 	py -3.6 -m venv venv || py -3 -m venv venv) && \
 	(. venv/bin/activate || venv/Scripts/activate.bat) && \
-	pip install --upgrade pip pre-commit && \
-	pip install -r requirements.txt -e '.[all]' && \
+	python3 -m pip install --upgrade pip pre-commit && \
+	python3 -m pip install -r requirements.txt -e '.[all]' && \
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
 	mypy --install-types --non-interactive ;
@@ -28,7 +28,7 @@ upgrade:
 	daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini \
 	 > .unversioned_requirements.txt && \
-	pip3 install --upgrade --upgrade-strategy eager\
+	python3 -m pip install --upgrade --upgrade-strategy eager\
 	 -r .unversioned_requirements.txt -e '.[all]' && \
 	rm .unversioned_requirements.txt && \
 	make requirements
