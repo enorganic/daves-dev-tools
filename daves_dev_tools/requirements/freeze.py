@@ -73,9 +73,18 @@ def get_frozen_requirements(
                 ),
                 exclude=set(
                     chain(
-                        map(
-                            get_requirement_string_distribution_name,
-                            requirement_strings,
+                        # Exclude requirement strings which are *not*
+                        # distribution names (such as editable package paths),
+                        # as in these cases we are typically looking for this
+                        # package's dependencies
+                        (
+                            set(
+                                map(
+                                    get_requirement_string_distribution_name,
+                                    requirement_strings,
+                                )
+                            )
+                            - set(map(normalize_name, requirement_strings))
                         ),
                         map(normalize_name, exclude),
                     )
