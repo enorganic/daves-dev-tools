@@ -36,7 +36,7 @@ Pygments==2.11.2
 pyparsing==3.0.7
 pytest==7.0.1
 python-dateutil==2.8.2
-readme-renderer==32.0
+readme-renderer==34.0
 requests-toolbelt==0.9.1
 requests==2.27.1
 rfc3986==1.5.0
@@ -47,11 +47,11 @@ toml==0.10.2
 tomli-w==0.4.0
 tomli==1.2.3
 tox==3.24.5
-tqdm==4.62.3
+tqdm==4.63.1
 twine==3.8.0
 typed-ast==1.5.2
-typing-extensions==4.1.0
-urllib3==1.26.8
+typing-extensions==4.1.1
+urllib3==1.26.9
 virtualenv==20.13.1
 webencodings==0.5.1
 wheel==0.37.1
