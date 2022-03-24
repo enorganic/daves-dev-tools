@@ -4,10 +4,14 @@ from subprocess import check_call
 from tempfile import mkdtemp
 from itertools import chain
 from shutil import rmtree
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Iterator
 from glob import iglob
 from ..cerberus import apply_cerberus_path_arguments
 from ..utilities import update_url_user_password
+
+
+def _iglob_recursive(pathname: str) -> Iterator[str]:
+    return iglob(pathname, recursive=True)
 
 
 @apply_cerberus_path_arguments(
@@ -71,11 +75,14 @@ def download(
     try:
         os.chdir(temp_directory)
         matched_files: Tuple[str, ...] = tuple(
-            map(
-                lambda path: os.path.join(
-                    temp_directory, path  # type: ignore
+            filter(
+                os.path.isfile,
+                map(
+                    lambda path: os.path.join(
+                        temp_directory, path  # type: ignore
+                    ),
+                    chain(*map(_iglob_recursive, files)),  # type: ignore
                 ),
-                chain(*map(iglob, files)),  # type: ignore
             )
         )
     finally:
@@ -87,6 +94,7 @@ def download(
         new_path = os.path.join(directory, relative_path)
         if os.path.sep in relative_path:
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        print(new_path)
         os.rename(path, new_path)
         downloaded_paths.append(new_path)
     rmtree(temp_directory, ignore_errors=True)
