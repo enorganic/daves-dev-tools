@@ -122,15 +122,18 @@ def get_ignored_files(
     directory = os.path.abspath(directory)
     check_call(("git", "init", directory))
     check_call(("git", "add", directory))
-    return set(
-        check_output(
-            ("git", "ls-files", "-o", directory),
-            encoding="utf-8",
-            universal_newlines=True,
+    return (
+        set(
+            check_output(
+                ("git", "ls-files", "-o", directory),
+                encoding="utf-8",
+                universal_newlines=True,
+            )
+            .strip()
+            .split("\n")
         )
-        .strip()
-        .split("\n")
-    ) - _get_directory_globs_files(directory, exclude, recursive=True)
+        - _get_directory_globs_files(directory, exclude, recursive=True)
+    )
 
 
 def _is_sub_directory_excluded(
