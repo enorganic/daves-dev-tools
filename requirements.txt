@@ -1,5 +1,5 @@
 attrs==21.4.0
-black==21.11b1
+black==22.3.0
 bleach==4.1.0
 boto3==1.21.27
 botocore==1.24.27
@@ -37,7 +37,6 @@ pyparsing==3.0.7
 pytest==7.0.1
 python-dateutil==2.8.2
 readme-renderer==34.0
-regex==2022.3.15
 requests-toolbelt==0.9.1
 requests==2.27.1
 rfc3986==1.5.0
