@@ -1,9 +1,10 @@
 import argparse
+from collections import deque
 import os
 import re
 from io import StringIO
 from pathlib import Path
-from typing import Iterable, IO
+from typing import IO
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
@@ -24,7 +25,7 @@ def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
     return project_path, setup_cfg_path
 
 
-def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
+def _touch_packages_py_typed(project_path: str) -> None:
     def touch_py_typed(path: str) -> str:
         if os.path.basename(path).lower() == "__init__.py":
             py_typed_path: str = os.path.join(
@@ -35,16 +36,16 @@ def _touch_packages_py_typed(project_path: str) -> Iterable[str]:
             return os.path.relpath(py_typed_path, project_path)
         return ""
 
-    return filter(
-        None,
+    deque(
         map(
             touch_py_typed, iter_distribution_location_file_paths(project_path)
         ),
+        maxlen=0,
     )
 
 
 def _update_setup_cfg(
-    setup_cfg_path: str, py_typed_paths: Iterable[str]
+    setup_cfg_path: str,
 ) -> None:
     parser: ConfigParser = ConfigParser()
     if os.path.isfile(setup_cfg_path):
@@ -89,8 +90,10 @@ def make_typed(path: str = ".") -> None:
     project_path: str
     setup_cfg_path: str
     project_path, setup_cfg_path = _get_project_and_setup_cfg_paths(path)
+    # Create py.typed files
+    _touch_packages_py_typed(project_path)
     # Parse and update setup.cfg
-    _update_setup_cfg(setup_cfg_path, _touch_packages_py_typed(project_path))
+    _update_setup_cfg(setup_cfg_path)
 
 
 def main() -> None:
