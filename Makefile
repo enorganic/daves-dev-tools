@@ -2,7 +2,7 @@
 install:
 	{ python3.6 -m venv venv || python3 -m venv venv || \
 	py -3.6 -m venv venv || py -3 -m venv venv ; } && \
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	python3 -m pip install --upgrade pip pre-commit && \
 	python3 -m pip install -r requirements.txt -e '.[all]' && \
 	pre-commit install\
@@ -11,12 +11,12 @@ install:
 	echo "Installation complete"
 
 editable:
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools install-editable --upgrade-strategy eager && \
 	make requirements
 
 clean:
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools uninstall-all\
 	 -e '.[all]'\
      -e pyproject.toml\
@@ -25,11 +25,11 @@ clean:
 	daves-dev-tools clean
 
 distribute:
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools distribute --skip-existing
 
 upgrade:
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pre-commit autoupdate && \
 	daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini \
@@ -40,7 +40,7 @@ upgrade:
 	make requirements
 
 requirements:
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools requirements update\
 	 -v\
 	 -aen all\
@@ -51,4 +51,4 @@ requirements:
 	 > requirements.txt
 
 test:
-	{ venv/Scripts/activate.bat || . venv/bin/activate ; } && tox -r
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && tox -r

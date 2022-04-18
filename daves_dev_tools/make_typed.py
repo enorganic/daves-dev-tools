@@ -4,7 +4,7 @@ import os
 import re
 from io import StringIO
 from pathlib import Path
-from typing import IO
+from typing import IO, Set
 from typing import Tuple
 from configparser import ConfigParser
 from .requirements.utilities import (
@@ -26,15 +26,21 @@ def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:
 
 
 def _touch_packages_py_typed(project_path: str) -> None:
-    def touch_py_typed(path: str) -> str:
-        if os.path.basename(path).lower() == "__init__.py":
-            py_typed_path: str = os.path.join(
-                os.path.dirname(path), "py.typed"
-            )
-            print(f"touch {py_typed_path}")
-            Path(py_typed_path).touch()
-            return os.path.relpath(py_typed_path, project_path)
-        return ""
+    py_typed_paths: Set[str] = set()
+    setup_py_path: str = str(
+        Path(project_path).absolute().joinpath("setup.py")
+    )
+
+    def touch_py_typed(path: str) -> None:
+        if path.endswith(".py"):
+            absolute_path: Path = Path(path).absolute()
+            if str(absolute_path) != setup_py_path:
+                py_typed_path: Path = absolute_path.parent.joinpath("py.typed")
+                py_typed_path_str: str = str(py_typed_path)
+                if py_typed_path_str not in py_typed_paths:
+                    print(f"touch {py_typed_path}")
+                    py_typed_path.touch()
+                    py_typed_paths.add(py_typed_path_str)
 
     deque(
         map(
