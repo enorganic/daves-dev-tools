@@ -21,6 +21,7 @@ clean:
 	 -e '.[all]'\
      -e pyproject.toml\
      -e tox.ini\
+	 -e pre-commit\
      -e requirements.txt && \
 	daves-dev-tools clean
 
@@ -42,7 +43,6 @@ upgrade:
 requirements:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools requirements update\
-	 -v\
 	 -aen all\
 	 setup.cfg pyproject.toml tox.ini && \
 	daves-dev-tools requirements freeze\

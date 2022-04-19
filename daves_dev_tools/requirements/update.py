@@ -367,7 +367,6 @@ def update(
     paths: Iterable[str],
     ignore: Iterable[str] = (),
     all_extra_name: str = "",
-    verbose: bool = False,
 ) -> None:
     """
     Update requirement versions in the specified files.
@@ -380,7 +379,6 @@ def update(
     - all_extra_name (str): If provided, an extra which consolidates
       the requirements for all other extras will be added/updated to
       *setup.cfg* (this argument is ignored for *requirements.txt* files)
-    - verbose (bool): Echo more verbose output
     """
     if isinstance(paths, str):
         paths = (paths,)
@@ -393,7 +391,11 @@ def update(
 
 def main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        prog="daves-dev-tools requirements update"
+        prog="daves-dev-tools requirements update",
+        description=(
+            "Update requirement versions in the specified files "
+            "to align with currently installed versions of each distribution."
+        ),
     )
     parser.add_argument(
         "-i",
@@ -418,14 +420,6 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Echo more verbose output",
-    )
-    parser.add_argument(
         "path",
         nargs="+",
         type=str,
@@ -439,7 +433,6 @@ def main() -> None:
         paths=arguments.path,
         ignore=tuple(iter_parse_delimited_values(arguments.ignore)),
         all_extra_name=arguments.all_extra_name,
-        verbose=arguments.verbose,
     )
 
 

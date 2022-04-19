@@ -29,6 +29,29 @@ one or more *extras*:
 
 ### Command Line Interface
 
+```text
+$ daves-dev-tools % daves-dev-tools -h
+Usage:
+  daves-dev-tools <command> [options]
+
+Commands:
+  git                         Tools for interacting with git repos.
+  requirements                Tools for managing requirement versions.
+  install-editable            Auto-discover and install packages in "develop"
+                              mode used by the current environment or by one or
+                              more specified packages/projects.
+  make-typed                  Configure your project to indicate to `mypy` that
+                              the contents are type-hinted.
+  uninstall-all               Uninstall all distributions from the current
+                              python environment except for those explicitly
+                              specified (and their dependencies).
+  clean                       Delete files from your project which are ignored
+                              by `git`, excepting files matching specified
+                              exclusion patterns.
+  distribute                  Build and distribute to PYPI (or other indexes)
+                              with one command.
+```
+
 #### daves-dev-tools requirements update
 
 Example:
