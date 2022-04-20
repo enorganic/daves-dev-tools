@@ -1,8 +1,8 @@
 import sys
 from importlib import import_module
 from types import ModuleType
-
 from . import __name__ as _module_name
+from .errors import get_exception_text
 
 
 def _print_help() -> None:
@@ -57,6 +57,7 @@ def main() -> None:
             module = import_module(f"{_module_name}.{command}")
         module.main()  # type: ignore
     except Exception:
+        print(get_exception_text())
         _print_help()
 
 

@@ -74,7 +74,7 @@ def _get_help() -> bool:
     """
     if set(sys.argv) & {"-h", "--help", "-H", "--HELP"}:
         help_: str = check_output(
-            (sys.executable, "-m", "twine" "upload" "-h"),
+            (sys.executable, "-m", "twine", "upload", "-h"),
             encoding="utf-8",
             universal_newlines=True,
         ).strip()
