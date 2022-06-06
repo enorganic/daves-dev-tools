@@ -37,7 +37,9 @@ def download(
     Parameters:
 
     - repo (str): A git URL, as you would pass to `git clone`
-    - files ([str]): One or more "glob" patterns or relative file paths
+    - files ([str]): One or more
+      [glob patterns](https://docs.python.org/3/library/glob.html)
+      or relative file paths
     - directory (str): The target directory (if not provided, the current
       directory is used)
     - branch (str): A branch from which to retrieve (if not provided,
