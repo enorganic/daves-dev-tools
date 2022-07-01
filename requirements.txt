@@ -25,7 +25,6 @@ mypy
 mypy-extensions
 packaging
 pathspec
-pip
 pkginfo
 platformdirs
 pluggy
