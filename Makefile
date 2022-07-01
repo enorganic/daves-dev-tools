@@ -7,7 +7,7 @@ install:
 	python3 -m pip install -r requirements.txt -e '.[all]' && \
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
-	mypy --install-types --non-interactive ; \
+	{ mypy --install-types --non-interactive || echo "" ; } \
 	echo "Installation complete"
 
 editable:
