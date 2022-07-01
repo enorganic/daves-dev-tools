@@ -3,7 +3,7 @@ install:
 	{ python3.6 -m venv venv || python3 -m venv venv || \
 	py -3.6 -m venv venv || py -3 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	python3 -m pip install --upgrade pip pre-commit && \
+	python3 -m pip install --ignore-installed --upgrade pip pre-commit && \
 	python3 -m pip install -r requirements.txt -e '.[all]' && \
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
