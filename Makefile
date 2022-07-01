@@ -48,6 +48,7 @@ requirements:
 	 setup.cfg pyproject.toml tox.ini && \
 	daves-dev-tools requirements freeze\
 	 -e pip\
+	 -e wheel\
 	 -nv '*'\
 	 '.[all]' pyproject.toml tox.ini\
 	 > requirements.txt

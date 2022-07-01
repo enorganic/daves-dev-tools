@@ -53,5 +53,4 @@ typing-extensions
 urllib3
 virtualenv
 webencodings
-wheel
 zipp
