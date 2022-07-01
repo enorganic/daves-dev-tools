@@ -34,10 +34,10 @@ upgrade:
 	pre-commit autoupdate && \
 	daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini \
-	 > .unversioned_requirements.txt && \
+	 > .requirements.txt && \
 	python3 -m pip install --upgrade --upgrade-strategy eager\
-	 -r .unversioned_requirements.txt -e '.[all]' && \
-	rm .unversioned_requirements.txt && \
+	 -r .requirements.txt -e '.[all]' && \
+	rm .requirements.txt && \
 	make requirements
 
 requirements:
@@ -46,7 +46,7 @@ requirements:
 	 -aen all\
 	 setup.cfg pyproject.toml tox.ini && \
 	daves-dev-tools requirements freeze\
-	 -nv setuptools -nv filelock -nv platformdirs\
+	 -nv '*'\
 	 '.[all]' pyproject.toml tox.ini\
 	 > requirements.txt
 
