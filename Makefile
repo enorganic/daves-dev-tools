@@ -51,4 +51,4 @@ requirements:
 	 > requirements.txt
 
 test:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && tox -r
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && python3 -m tox -r
