@@ -115,7 +115,20 @@ def run(command: Sequence[str], echo: bool = True) -> str:
         shell=isinstance(command, str),
     ).strip()
     if echo:
-        print(output)
+        try:
+            print(output)
+        except UnicodeEncodeError:
+            encoding: str = sys.getdefaultencoding()
+            if encoding == "utf-8":
+                raise
+            else:
+                print(
+                    str(
+                        output.encode(encoding=encoding, errors="replace"),
+                        encoding=encoding,
+                        errors="replace",
+                    )
+                )
     return output
 
 
