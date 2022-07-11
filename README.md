@@ -140,10 +140,10 @@ optional arguments:
 
 ```text
 $ daves-dev-tools install-editable -h
-usage: daves-dev-tools install-editable [-h] [-d DIRECTORY] [-e EXCLUDE]
+usage: daves-dev-tools install-editable [-h] [-r REQUIREMENT] [-d DIRECTORY]
+                                        [-e EXCLUDE] [-el EXCLUDE_LOCATION]
                                         [-edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION]
                                         [-dr] [-ie]
-                                        [requirement [requirement ...]]
 
 This command will attempt to find and install, in develop (editable) mode, all
 packages which are installed in the current python environment. If one or more
@@ -154,13 +154,14 @@ excluded by passing regular expressions to the `-edre` parameter. Any
 arguments passed not matching those specified below will be passed on to `pip
 install` (see `pip install -h` for additionally available arguments).
 
-positional arguments:
-  requirement           One or more requirement specifiers or configuration
-                        file paths. If provided, only dependencies of these
-                        requirements will be installed.
-
 optional arguments:
   -h, --help            show this help message and exit
+  -r REQUIREMENT, --requirement REQUIREMENT
+                        One or more requirement specifiers, requirement file
+                        paths, or configuration file paths (setup.cfg,
+                        setup.py, pyproject.toml, tox.ini, etc.). If provided,
+                        only dependencies of these requirements will be
+                        installed.
   -d DIRECTORY, --directory DIRECTORY
                         A directory in which to search for requirements. By
                         default, the directory above the current directory is
@@ -169,18 +170,24 @@ optional arguments:
   -e EXCLUDE, --exclude EXCLUDE
                         A comma-separated list of distribution names to
                         exclude
+  -el EXCLUDE_LOCATION, --exclude-location EXCLUDE_LOCATION
+                        One or more glob patterns indicating directories to
+                        exclude. This argument may be expressed as a path
+                        relative to the current.
   -edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION, --exclude-directory-regular-expression EXCLUDE_DIRECTORY_REGULAR_EXPRESSION
                         Directories matching this regular expression will be
                         excluded when searching for setup locations This
                         argument may be passed more than once to exclude
                         directories matching more than one regular expression.
                         The default for this argument is equivalent to `-edre
-                        '^[.~].*$' -edre '^venv$' -edre '^site-packages$'`
+                        '^[.~].*$' -edre '^venv$' -edre '^site-packages$'`.
+                        Unlike for *--exclude-location*, these expressions
+                        apply only to the directory *name*, and no attempt to
+                        resolve relative paths is made.
   -dr, --dry-run        Print, but do not execute, all `pip install` commands
   -ie, --include-extras
                         Install all extras for all discovered distributions
 ```
-
 
 #### daves-dev-tools make-typed
 
