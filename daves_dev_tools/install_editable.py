@@ -201,7 +201,7 @@ def install_editable(
       installation should be limited
     - directories ([str]) = ("../",): The directories in which to search
       for distributions to install. By default, the parent of the currently
-      directory is used. Glob patterns 
+      directory is used. Glob patterns
     - exclude ([str]): One or more distributions to pass over when searching
       for distributable projects
     - exclude_directories ([str]): Glob patterns of directories to exclude.
