@@ -296,12 +296,11 @@ def _get_setup_py_metadata(path: str, args: Tuple[str, ...]) -> str:
             except CalledProcessError:
                 warn(
                     f"A package name could not be found in {path}, "
-                    "attempting to refresh distribution and egg info"
+                    "attempting to refresh egg info"
                     f"\nError ignored: {get_exception_text()}"
                 )
-                # re-write distribution and egg information and attempt to
-                # get the name again
-                setup_dist_egg_info(directory)
+                # re-write egg info and attempt to get the name again
+                setup_egg_info(directory)
                 try:
                     value = (
                         check_output(
@@ -370,14 +369,20 @@ def setup_dist_egg_info(directory: str) -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    _setup_location(directory, (("-q", "dist_info"), ("-q", "egg_info")))
+    _setup_location(
+        directory,
+        (
+            ("-q", "dist_info"),
+            ("-q", "egg_info"),
+        ),
+    )
 
 
 def _reload_distribution_information(
     distribution: pkg_resources.Distribution,
 ) -> pkg_resources.Distribution:
     if _distribution_is_editable(distribution):
-        setup_dist_egg_info(distribution.location)
+        setup_egg_info(distribution.location)
     # Clear the distribution information cache
     for cached_property_name in (
         "_pkg_info",
@@ -787,7 +792,7 @@ def get_requirements_required_distribution_names(
 def iter_distribution_location_file_paths(location: str) -> Iterable[str]:
     location = os.path.abspath(location)
     name: str = get_setup_distribution_name(location)
-    setup_dist_egg_info(location)
+    setup_egg_info(location)
     metadata_path: str = os.path.join(
         location, f"{pkg_resources.to_filename(name)}.egg-info"
     )

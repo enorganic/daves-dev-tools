@@ -238,7 +238,10 @@ def delete_ignored(
             if dry_run:
                 print(f"rm {path}")
             else:
-                os.remove(path)
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
 
 
 delete_ignored.__doc__ = delete_ignored.__doc__.format(  # type: ignore
