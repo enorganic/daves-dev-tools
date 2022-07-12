@@ -141,7 +141,7 @@ optional arguments:
 ```text
 $ daves-dev-tools install-editable -h
 usage: daves-dev-tools install-editable [-h] [-r REQUIREMENT] [-d DIRECTORY]
-                                        [-e EXCLUDE] [-el EXCLUDE_LOCATION]
+                                        [-e EXCLUDE] [-ed EXCLUDE_DIRECTORY]
                                         [-edre EXCLUDE_DIRECTORY_REGULAR_EXPRESSION]
                                         [-dr] [-ie]
 
@@ -170,7 +170,7 @@ optional arguments:
   -e EXCLUDE, --exclude EXCLUDE
                         A comma-separated list of distribution names to
                         exclude
-  -el EXCLUDE_LOCATION, --exclude-location EXCLUDE_LOCATION
+  -ed EXCLUDE_DIRECTORY, --exclude-directory EXCLUDE_DIRECTORY
                         One or more glob patterns indicating directories to
                         exclude. This argument may be expressed as a path
                         relative to the current.
@@ -181,7 +181,7 @@ optional arguments:
                         directories matching more than one regular expression.
                         The default for this argument is equivalent to `-edre
                         '^[.~].*$' -edre '^venv$' -edre '^site-packages$'`.
-                        Unlike for *--exclude-location*, these expressions
+                        Unlike for *--exclude-directory*, these expressions
                         apply only to the directory *name*, and no attempt to
                         resolve relative paths is made.
   -dr, --dry-run        Print, but do not execute, all `pip install` commands

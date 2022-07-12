@@ -13,8 +13,8 @@ install:
 
 editable:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	daves-dev-tools install-editable --upgrade-strategy eager && \
-	make requirements
+	daves-dev-tools install-editable --upgrade-strategy eager -ed . && \
+	make upgrade
 
 clean:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
@@ -37,7 +37,7 @@ upgrade:
 	 -nv '*' . pyproject.toml tox.ini \
 	 > .requirements.txt && \
 	python3 -m pip install --upgrade --upgrade-strategy eager\
-	 -r .requirements.txt -e '.[all]' && \
+	 -r .requirements.txt && \
 	rm .requirements.txt && \
 	make requirements
 

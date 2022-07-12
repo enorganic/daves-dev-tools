@@ -42,7 +42,7 @@ def _get_requirement_string(
 def _iter_find_distributions(
     distribution_names: Set[str],
     directories: Iterable[str] = ("../",),
-    exclude_locations: Iterable[str] = (),
+    exclude_directories: Iterable[str] = (),
     exclude_directory_regular_expressions: Iterable[
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
@@ -56,7 +56,7 @@ def _iter_find_distributions(
     )
 
     def include_directory(directory: str) -> bool:
-        if os.path.abspath(directory) in exclude_locations:
+        if os.path.abspath(directory) in exclude_directories:
             return False
         directory_basename: str = os.path.basename(directory)
         for exclude_directory_pattern in exclude_directory_patterns:
@@ -96,7 +96,7 @@ def _iter_find_distributions(
 def find_and_install_distributions(
     distribution_names: Set[str],
     directories: Iterable[str] = ("../",),
-    exclude_locations: Iterable[str] = (),
+    exclude_directories: Iterable[str] = (),
     exclude_directory_regular_expressions: Iterable[
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
@@ -114,8 +114,9 @@ def find_and_install_distributions(
       directory is used.
     - exclude ([str]): One or more distributions to pass over when searching
       for distributable projects
-    - exclude_locations ([str]): Glob patterns of directories to exclude.
-      These patterns may be expressed relative to the current directory.
+    - exclude_directories ([str]): Glob patterns indicating directories to
+      exclude. These patterns may be expressed relative to the current
+      directory.
     - exclude_directory_regular_expressions ([str]): Directories with names
       matching any of these patterns will be excluded. This takes into account
       the directory *name* only, and no attempt is made to resolve relative
@@ -126,10 +127,16 @@ def find_and_install_distributions(
       `pip install`
     """
     location: str
-    exclude_locations = set(
+    exclude_directories = set(
         map(
             os.path.abspath,
-            chain(*map(lambda location: glob(location), exclude_locations)),
+            chain(*map(lambda location: glob(location), exclude_directories)),
+        )
+    )
+    directories = set(
+        map(
+            os.path.abspath,
+            chain(*map(lambda location: glob(location), exclude_directories)),
         )
     )
     requirements: Tuple[str, ...] = tuple(
@@ -141,7 +148,7 @@ def find_and_install_distributions(
                 exclude_directory_regular_expressions=(
                     exclude_directory_regular_expressions
                 ),
-                exclude_locations=exclude_locations,
+                exclude_directories=exclude_directories,
                 include_extras=include_extras,
             ),
         )
@@ -175,7 +182,7 @@ def install_editable(
     requirements: Iterable[str] = (),
     directories: Iterable[str] = ("../"),
     exclude: Iterable[str] = (),
-    exclude_locations: Iterable[str] = (),
+    exclude_directories: Iterable[str] = (),
     exclude_directory_regular_expressions: Iterable[
         str
     ] = EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS,
@@ -194,10 +201,10 @@ def install_editable(
       installation should be limited
     - directories ([str]) = ("../",): The directories in which to search
       for distributions to install. By default, the parent of the currently
-      directory is used.
+      directory is used. Glob patterns 
     - exclude ([str]): One or more distributions to pass over when searching
       for distributable projects
-    - exclude_locations ([str]): Glob patterns of directories to exclude.
+    - exclude_directories ([str]): Glob patterns of directories to exclude.
       These patterns may be expressed relative to the current directory.
     - exclude_directory_regular_expressions ([str]): Directories with names
       matching any of these patterns will be excluded. This takes into account
@@ -218,7 +225,7 @@ def install_editable(
             required_distribution_names - set(map(normalize_name, exclude))
         ),
         directories=directories,
-        exclude_locations=exclude_locations,
+        exclude_directories=exclude_directories,
         exclude_directory_regular_expressions=(
             exclude_directory_regular_expressions
         ),
@@ -281,8 +288,8 @@ def main() -> None:
         help="A comma-separated list of distribution names to exclude",
     )
     parser.add_argument(
-        "-el",
-        "--exclude-location",
+        "-ed",
+        "--exclude-directory",
         default=[],
         type=str,
         action="append",
@@ -302,7 +309,7 @@ def main() -> None:
             "when searching for setup locations This argument may be passed "
             "more than once to exclude directories matching more than one "
             "regular expression. The default for this argument is "
-            "equivalent to `-edre {}`. Unlike for *--exclude-location*, "
+            "equivalent to `-edre {}`. Unlike for *--exclude-directory*, "
             "these expressions apply only to the directory *name*, and "
             "no attempt to resolve relative paths is made.".format(
                 " -edre ".join(
@@ -339,7 +346,7 @@ def main() -> None:
         exclude_directory_regular_expressions=(
             namespace.exclude_directory_regular_expression
         ),
-        exclude_locations=namespace.exclude_location,
+        exclude_directories=namespace.exclude_directory,
         exclude=iter_parse_delimited_values(namespace.exclude),
         dry_run=namespace.dry_run,
         include_extras=namespace.include_extras,
