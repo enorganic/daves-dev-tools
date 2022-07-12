@@ -136,7 +136,7 @@ def find_and_install_distributions(
     directories = set(
         map(
             os.path.abspath,
-            chain(*map(lambda location: glob(location), exclude_directories)),
+            chain(*map(lambda location: glob(location), directories)),
         )
     )
     requirements: Tuple[str, ...] = tuple(
