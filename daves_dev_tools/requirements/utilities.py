@@ -1,8 +1,11 @@
+from shutil import rmtree
 import sys
 import os
 import tomli
 import pkg_resources
 import importlib_metadata
+from glob import iglob
+from pathlib import Path
 from subprocess import check_output, CalledProcessError
 from collections import deque
 from warnings import warn
@@ -346,14 +349,16 @@ def _setup(arguments: Tuple[str, ...]) -> None:
 
 
 def _setup_location(
-    location: str, arguments: Iterable[Tuple[str, ...]]
+    location: Union[str, Path], arguments: Iterable[Tuple[str, ...]]
 ) -> None:
+    if isinstance(location, str):
+        location = Path(location)
     # If there is no setup.py file, we can't update egg info
-    if not os.path.isfile(os.path.join(location, "setup.py")):
+    if not location.joinpath("setup.py").is_file():
         return
     if isinstance(arguments, str):
         arguments = (arguments,)
-    current_directory: str = os.path.abspath(os.curdir)
+    current_directory: Path = Path(os.curdir).absolute()
     os.chdir(location)
     try:
         deque(map(_setup, arguments), maxlen=0)
@@ -413,14 +418,25 @@ def setup_dist_info(directory: str) -> None:
     return _setup_location(directory, (("-q", "dist_info"),))
 
 
-def setup_egg_info(directory: str) -> None:
+def setup_egg_info(directory: Union[str, Path]) -> None:
     """
-    Refresh dist-info and egg-info for the editable package installed in
+    Refresh egg-info for the editable package installed in
     `directory`
     """
-    directory = os.path.abspath(directory)
-    if not os.path.isdir(directory):
-        directory = os.path.dirname(directory)
+    if isinstance(directory, str):
+        directory = Path(directory)
+    directory = directory.absolute()
+    if not directory.is_dir():
+        directory = directory.parent
+    # If the python version is > 3.6, we need to make sure that if there are
+    # dist-info files, those files include a RECORD, and need to delete them
+    # otherwise
+    if sys.version_info > (3, 6):
+        dist_info: str
+        for dist_info in iglob(str(directory.joinpath("*.dist-info"))):
+            dist_info_path: Path = Path(dist_info)
+            if not dist_info_path.joinpath("RECORD").is_file():
+                rmtree(dist_info_path)
     return _setup_location(directory, (("-q", "egg_info"),))
 
 
