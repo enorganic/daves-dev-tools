@@ -129,13 +129,13 @@ def find_and_install_distributions(
     location: str
     exclude_directories = set(
         map(
-            os.path.abspath,
+            os.path.abspath,  # type: ignore
             chain(*map(lambda location: glob(location), exclude_directories)),
         )
     )
     directories = set(
         map(
-            os.path.abspath,
+            os.path.abspath,  # type: ignore
             chain(*map(lambda location: glob(location), directories)),
         )
     )
