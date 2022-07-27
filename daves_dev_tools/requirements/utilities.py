@@ -428,10 +428,10 @@ def setup_egg_info(directory: Union[str, Path]) -> None:
     directory = directory.absolute()
     if not directory.is_dir():
         directory = directory.parent
-    # If the python version is > 3.6, we need to make sure that if there are
-    # dist-info files, those files include a RECORD, and need to delete them
-    # otherwise
-    if sys.version_info > (3, 6):
+    # If there is a setup.py, and a *.dist-info directory, but that
+    # *.dist-info directory has no RECORD, we need to remove the *.dist-info
+    # directory
+    if directory.joinpath("setup.py").is_file():
         dist_info: str
         for dist_info in iglob(str(directory.joinpath("*.dist-info"))):
             dist_info_path: Path = Path(dist_info)
