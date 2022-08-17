@@ -168,7 +168,7 @@ def find_and_install_distributions(
         command: Tuple[str, ...] = (sys.executable, "-m", "pip", "install")
         # For setuptools version 64, we use compatibility mode to avoid
         # issues with implicit namespace packages and mypy
-        if _get_distribution_major_version("setuptools") == 64:
+        if _get_distribution_major_version("setuptools") >= 64:
             command += (
                 "--config-settings",
                 "editable_mode=compat",
