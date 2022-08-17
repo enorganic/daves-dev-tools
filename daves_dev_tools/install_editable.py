@@ -93,6 +93,17 @@ def _iter_find_distributions(
     return chain(*map(iter_find_directory_distributions, directories))
 
 
+def _get_distribution_major_version(name: str) -> int:
+    version: str = ""
+    try:
+        version = get_distribution(name).version
+        if version:
+            return int(version.split(".")[0])
+    except KeyError:
+        pass
+    return -1
+
+
 def find_and_install_distributions(
     distribution_names: Set[str],
     directories: Iterable[str] = ("../",),
@@ -154,12 +165,17 @@ def find_and_install_distributions(
         )
     )
     if requirements:
-        command: Tuple[str, ...] = (
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-        ) + tuple(chain(*zip(("-e",) * len(requirements), requirements)))
+        command: Tuple[str, ...] = (sys.executable, "-m", "pip", "install")
+        # For setuptools version 64, we use compatibility mode to avoid
+        # issues with implicit namespace packages and mypy
+        if _get_distribution_major_version("setuptools") == 64:
+            command += (
+                "--config-settings",
+                "editable_mode=compat",
+            )
+        command += tuple(
+            chain(*zip(("-e",) * len(requirements), requirements))
+        )
         if pip_install_arguments:
             if isinstance(pip_install_arguments, str):
                 pip_install_arguments = (pip_install_arguments,)
