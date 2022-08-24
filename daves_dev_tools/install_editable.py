@@ -1,10 +1,10 @@
 import argparse
-from glob import glob
+import pkg_resources
 import re
 import sys
 import os
+from glob import glob
 from itertools import chain
-from pkg_resources import Distribution
 from pipes import quote
 from typing import Iterable, Set, List, Tuple, Pattern, Sequence
 from .requirements.utilities import (
@@ -31,10 +31,10 @@ def _get_requirement_string(
 ) -> str:
     requirement_string: str = os.path.abspath(directory)
     if is_installed(name) and include_extras:
-        distribution: Distribution = get_distribution(name)
+        distribution: pkg_resources.Distribution = get_distribution(name)
         if distribution.extras:
             requirement_string = (
-                f"{requirement_string}" f"[{','.join(distribution.extras)}]"
+                f"{requirement_string}[{','.join(distribution.extras)}]"
             )
     return requirement_string
 
@@ -96,11 +96,14 @@ def _iter_find_distributions(
 def _get_distribution_major_version(name: str) -> int:
     version: str = ""
     try:
-        version = get_distribution(name).version
-        if version:
-            return int(version.split(".")[0])
-    except KeyError:
-        pass
+        version = pkg_resources.get_distribution("setuptools").version
+    except Exception:
+        try:
+            version = get_distribution(name).version
+        except KeyError:
+            pass
+    if version:
+        return int(version.split(".")[0])
     return -1
 
 

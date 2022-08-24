@@ -1,6 +1,11 @@
-from shutil import rmtree
+import functools
+from runpy import run_path
 import sys
 import os
+from shutil import rmtree
+from types import ModuleType
+from urllib.parse import ParseResult, urlparse
+from urllib.request import url2pathname
 import tomli
 import pkg_resources
 import importlib_metadata
@@ -30,13 +35,15 @@ from more_itertools import unique_everseen
 from ..utilities import lru_cache, run
 from ..errors import append_exception_text, get_exception_text
 
+_return_dict_str_str_lru_cache: Callable[
+    [], Callable[..., Callable[..., Dict[str, str]]]
+] = functools.lru_cache  # type: ignore
 _BUILTIN_DISTRIBUTION_NAMES: Tuple[str] = ("distribute",)
 # This variable tracks the absolute file paths from which a package has been
 # re-installed, in order to avoid performing a reinstall redundantly
 _reinstalled_locations: Set[str] = set()
 
 
-@lru_cache()
 def normalize_name(name: str) -> str:
     """
     Normalize a project/distribution name
@@ -79,14 +86,102 @@ def is_configuration_file(path: str) -> bool:
     return True
 
 
+def _get_editable_finder_location(path_name: str) -> str:
+    key: str
+    value: Any
+    init_globals: Dict[str, Any]
+    try:
+        init_globals = run_path(path_name)
+    except Exception:
+        return ""
+    for key, value in init_globals.items():
+        if key.startswith("__editable__"):
+            finder: ModuleType = value
+            module_name: str
+            module_location: str
+            for module_name, module_location in getattr(
+                finder, "MAPPING", {}
+            ).items():
+                path: Path = Path(module_location)
+                index: int
+                for index in range(len(module_name.split("."))):
+                    path = path.parent
+                while path != path.parent:
+                    if (
+                        path.joinpath("setup.py").is_file()
+                        or path.joinpath("setup.cfg").is_file()
+                    ):
+                        return str(path)
+                    path = path.parent
+    return ""
+
+
+def _iter_path_editable_distribution_locations(
+    directory: str,
+) -> Iterable[Tuple[str, str]]:
+    directory_path: Path = Path(directory)
+    file_path: Path
+    for file_path in chain(
+        directory_path.glob("*.egg-link"),
+        directory_path.glob("__editable__.*.pth"),
+    ):
+        name: str
+        if file_path.name.endswith(".egg-link"):
+            name = file_path.name[:-9]
+        else:
+            name = file_path.name[13:-4].partition("-")[0]
+        name = normalize_name(name)
+        with open(file_path) as file_io:
+            location: str = file_io.read().strip()
+            if os.path.exists(location):
+                yield name, location
+            else:
+                location = _get_editable_finder_location(str(file_path))
+                if location:
+                    yield name, location
+
+
+def _iter_editable_distribution_locations() -> Iterable[Tuple[str, str]]:
+    yield from chain(
+        *map(_iter_path_editable_distribution_locations, sys.path)
+    )
+
+
+@_return_dict_str_str_lru_cache()
+def get_editable_distributions_locations() -> Dict[str, str]:
+    """
+    Get a mapping of (normalized) editable distribution names to their
+    locations.
+    """
+    return dict(_iter_editable_distribution_locations())
+
+
 def refresh_working_set() -> None:
     """
     Force a refresh of all distribution information and clear related caches
     """
     get_installed_distributions.cache_clear()
+    get_editable_distributions_locations.cache_clear()  # type: ignore
     is_editable.cache_clear()
     is_installed.cache_clear()
     get_requirement_string_distribution_name.cache_clear()
+    pkg_resources.working_set.entries = []
+    pkg_resources.working_set.__init__()  # type: ignore
+
+
+def refresh_editable_distributions() -> None:
+    """
+    Update distribution information for editable installs
+    """
+    name: str
+    location: str
+    for name, location in get_editable_distributions_locations().items():
+        distribution: pkg_resources.Distribution = (
+            pkg_resources.get_distribution(name)
+        )
+        setup_dist_info(
+            location, str(Path(getattr(distribution, "egg_info")).parent)
+        )
     pkg_resources.working_set.entries = []
     pkg_resources.working_set.__init__()  # type: ignore
 
@@ -96,10 +191,9 @@ def get_installed_distributions() -> Dict[str, pkg_resources.Distribution]:
     """
     Return a dictionary of installed distributions.
     """
+    refresh_editable_distributions()
     installed: Dict[str, pkg_resources.Distribution] = {}
     for distribution in pkg_resources.working_set:
-        if _distribution_is_editable(distribution):
-            _reload_distribution_information(distribution)
         installed[normalize_name(distribution.project_name)] = distribution
     return installed
 
@@ -229,25 +323,14 @@ def iter_configuration_file_requirement_strings(path: str) -> Iterable[str]:
 
 
 @lru_cache()
-def is_editable(distribution_name: str) -> bool:
+def is_editable(distribution_project_name: str) -> bool:
     """
     Return `True` if the indicated distribution is an editable installation.
     """
-    return _distribution_is_editable(get_distribution(distribution_name))
-
-
-def _distribution_is_editable(
-    distribution: pkg_resources.Distribution,
-) -> bool:
-    """
-    Return `True` if the `distribution` is an editable installation.
-    """
-    egg_link_file_name: str = f"{distribution.project_name}.egg-link"
-
-    def project_egg_link_exists(path: str) -> bool:
-        return os.path.isfile(os.path.join(path, egg_link_file_name))
-
-    return any(map(project_egg_link_exists, sys.path))
+    return bool(
+        normalize_name(distribution_project_name)
+        in get_editable_distributions_locations()
+    )
 
 
 def _get_setup_cfg_metadata(path: str, key: str) -> str:
@@ -383,42 +466,35 @@ def setup_dist_egg_info(directory: str) -> None:
     )
 
 
-def _reload_distribution_information(
-    distribution: pkg_resources.Distribution,
-) -> pkg_resources.Distribution:
-    if _distribution_is_editable(distribution):
-        setup_egg_info(distribution.location)
-    # Clear the distribution information cache
-    for cached_property_name in (
-        "_pkg_info",
-        "_key",
-        "_parsed_version",
-        "_version",
-        "__dep_map",
-    ):
-        try:
-            delattr(distribution, cached_property_name)
-        except AttributeError:
-            pass
-    return distribution
+def url2path(url: str) -> Path:
+    parse_result: ParseResult = urlparse(url)
+    return Path(
+        f"{os.path.sep}{os.path.sep}{parse_result.netloc}{os.path.sep}"
+    ).joinpath(url2pathname(parse_result.path))
 
 
-def reload_distribution_information(name: str) -> pkg_resources.Distribution:
-    return _reload_distribution_information(get_distribution(name))
+def get_editable_distribution_location(name: str) -> str:
+    return get_editable_distributions_locations().get(normalize_name(name), "")
 
 
-def setup_dist_info(directory: str) -> None:
+def setup_dist_info(directory: str, output_dir: str = "") -> None:
     """
-    Refresh dist-info and egg-info for the editable package installed in
+    Refresh dist-info for the editable package installed in
     `directory`
     """
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
-    return _setup_location(directory, (("-q", "dist_info"),))
+    return _setup_location(
+        directory,
+        (
+            ("-q", "dist_info")
+            + (("--output-dir", output_dir) if output_dir else ()),
+        ),
+    )
 
 
-def setup_egg_info(directory: Union[str, Path]) -> None:
+def setup_egg_info(directory: Union[str, Path], egg_base: str = "") -> None:
     """
     Refresh egg-info for the editable package installed in
     `directory`
@@ -437,35 +513,10 @@ def setup_egg_info(directory: Union[str, Path]) -> None:
             dist_info_path: Path = Path(dist_info)
             if not dist_info_path.joinpath("RECORD").is_file():
                 rmtree(dist_info_path)
-    return _setup_location(directory, (("-q", "egg_info"),))
-
-
-def _get_location_distribution_name(location: str) -> str:
-    """
-    Get a distribution name based on an installation location, or return
-    an empty string if no distribution can be found
-    """
-    location = os.path.abspath(location)
-
-    def _is_in_location(
-        name_distribution: Tuple[str, pkg_resources.Distribution]
-    ) -> bool:
-        return os.path.abspath(name_distribution[1].location) == location
-
-    def _get_name(
-        name_distribution: Tuple[str, pkg_resources.Distribution]
-    ) -> str:
-        return name_distribution[0]
-
-    try:
-        return next(
-            map(
-                _get_name,
-                filter(_is_in_location, get_installed_distributions().items()),
-            )
-        )
-    except StopIteration:
-        return get_setup_distribution_name(location)
+    return _setup_location(
+        directory,
+        (("-q", "egg_info") + (("--egg-base", egg_base) if egg_base else ()),),
+    )
 
 
 def _get_pkg_requirement(
@@ -512,7 +563,7 @@ def _get_requirement(
             location = "[".join(parts[:-1])
             extras = f"[{parts[-1]}"
         location = os.path.abspath(location)
-        name: str = _get_location_distribution_name(location)
+        name: str = get_setup_distribution_name(location)
         assert name, f"No distribution found in {location}"
         return constructor(f"{name}{extras}")
 
@@ -584,17 +635,33 @@ def _install_requirement_string(
     uncaught_error: Optional[Exception] = None
     flags: Tuple[str, ...]
     for flags in chain(
-        (("--user",), ()),
+        ((), ("--user",)),
         (
-            (("--user", "--force-reinstall"), ("--force-reinstall",))
+            (
+                ("--force-reinstall",),
+                (
+                    "--user",
+                    "--force-reinstall",
+                ),
+            )
             if editable
             else ()
         ),
     ):
+        if editable:
+            flags += ("-e",)
         try:
             run(
                 (
-                    (sys.executable, "-m", "pip", "install")
+                    (
+                        sys.executable,
+                        "-m",
+                        "pip",
+                        "install",
+                        "--no-deps",
+                        "--no-compile",
+                        "--no-build-isolation",
+                    )
                     + flags
                     + (requirement_string,)
                 ),
@@ -631,17 +698,19 @@ def _install_requirement(
         else requirement.project_name
     )
     distribution: Optional[pkg_resources.Distribution] = None
-    editable: bool = False
+    editable_location: str = ""
     try:
         distribution = get_distribution(name)
-        editable = _distribution_is_editable(distribution)
+        editable_location = get_editable_distribution_location(
+            distribution.project_name
+        )
     except KeyError:
         pass
     # If the requirement is installed and editable, re-install from
     # the editable location
-    if distribution and editable:
+    if distribution and editable_location:
         # Assemble a requirement specifier for the editable install
-        requirement_string = distribution.location
+        requirement_string = editable_location
         if requirement.extras:
             requirement_string = (
                 f"{requirement_string}[{','.join(requirement.extras)}]"
@@ -649,14 +718,11 @@ def _install_requirement(
     _install_requirement_string(
         requirement_string=requirement_string,
         name=name,
-        editable=editable,
+        editable=bool(editable_location),
         echo=echo,
     )
     # Refresh the metadata
-    if distribution:
-        _reload_distribution_information(distribution)
-    else:
-        refresh_working_set()
+    refresh_working_set()
 
 
 def _get_pkg_requirement_distribution(
