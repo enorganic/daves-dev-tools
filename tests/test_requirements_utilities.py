@@ -18,7 +18,6 @@ class TestRequirementsUtilities(unittest.TestCase):
             paths = (
                 r"C:\directory\sub-directory\file-name.ext",
                 r"C:\directory\sub directory\file name.ext",
-                r"\\localhost\c$\WINDOWS\file.ext",
                 r"\\network-drive\directory\sub-directory\file-name.ext",
                 r"\\network drive\directory\sub directory\file name.ext",
                 r"\\network%20drive\directory\sub%20directory\file%20name.ext",
