@@ -132,7 +132,7 @@ def _iter_path_editable_distribution_locations(
             name = file_path.name[13:-4].partition("-")[0]
         name = normalize_name(name)
         with open(file_path) as file_io:
-            location: str = file_io.read().strip()
+            location: str = file_io.read().strip().partition("\n")[0]
             if os.path.exists(location):
                 yield name, location
             else:
@@ -179,9 +179,11 @@ def refresh_editable_distributions() -> None:
         distribution: pkg_resources.Distribution = (
             pkg_resources.get_distribution(name)
         )
-        setup_dist_info(
-            location, str(Path(getattr(distribution, "egg_info")).parent)
-        )
+        egg_base: str = str(Path(getattr(distribution, "egg_info")).parent)
+        if egg_base == location:
+            setup_egg_info(location)
+        else:
+            setup_dist_info(location, egg_base)
     pkg_resources.working_set.entries = []
     pkg_resources.working_set.__init__()  # type: ignore
 
