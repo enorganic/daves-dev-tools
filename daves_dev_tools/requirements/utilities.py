@@ -4,8 +4,6 @@ import sys
 import os
 from shutil import rmtree
 from types import ModuleType
-from urllib.parse import ParseResult, urlparse
-from urllib.request import url2pathname
 import tomli
 import pkg_resources
 import importlib_metadata
