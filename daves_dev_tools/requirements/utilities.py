@@ -472,7 +472,7 @@ def url2path(url: str) -> Path:
     parse_result: ParseResult = urlparse(url)
     return Path(
         f"{os.path.sep}{os.path.sep}{parse_result.netloc}{os.path.sep}"
-    ).joinpath(url2pathname(parse_result.path))
+    ).joinpath(url2pathname(parse_result.path).lstrip(os.path.sep))
 
 
 def get_editable_distribution_location(name: str) -> str:
