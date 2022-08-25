@@ -34,7 +34,7 @@ class TestRequirementsUtilities(unittest.TestCase):
             )
         path: Path
         for path in map(Path, paths):
-            path = path.absolute
+            path = path.absolute()
             path_name: str = str(path)
             converted_path_name: str = str(url2path(path.as_uri()))
             assert (
