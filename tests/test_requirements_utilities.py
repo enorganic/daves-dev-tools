@@ -32,10 +32,9 @@ class TestRequirementsUtilities(unittest.TestCase):
                 ),
                 os.path.expanduser("~/directory/sub-directory/file-name.ext"),
             )
-        path: Path
-        for path in map(Path, paths):
-            path = path.absolute()
-            path_name: str = str(path)
+        path_name: str
+        for path_name in paths:
+            path: Path = Path(path_name)
             converted_path_name: str = str(url2path(path.as_uri()))
             assert (
                 path_name == converted_path_name
