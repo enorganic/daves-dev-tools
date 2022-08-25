@@ -3,6 +3,7 @@ import pkg_resources
 import re
 import sys
 import os
+from subprocess import list2cmdline
 from glob import glob
 from itertools import chain
 from pipes import quote
@@ -154,17 +155,14 @@ def find_and_install_distributions(
         )
     )
     requirements: Tuple[str, ...] = tuple(
-        map(
-            quote,
-            _iter_find_distributions(
-                distribution_names=distribution_names,
-                directories=directories,
-                exclude_directory_regular_expressions=(
-                    exclude_directory_regular_expressions
-                ),
-                exclude_directories=exclude_directories,
-                include_extras=include_extras,
+        _iter_find_distributions(
+            distribution_names=distribution_names,
+            directories=directories,
+            exclude_directory_regular_expressions=(
+                exclude_directory_regular_expressions
             ),
+            exclude_directories=exclude_directories,
+            include_extras=include_extras,
         )
     )
     if requirements:
@@ -192,7 +190,7 @@ def find_and_install_distributions(
                 pip_install_arguments += ("-U",)
             command += pip_install_arguments
         if dry_run:
-            print(" ".join(map(quote, command)))
+            print(list2cmdline(command))
         else:
             run(command)
 
