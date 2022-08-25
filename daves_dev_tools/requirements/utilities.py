@@ -471,6 +471,7 @@ def setup_dist_egg_info(directory: str) -> None:
 def url2path(url: str) -> Path:
     parse_result: ParseResult = urlparse(url)
     host: str = parse_result.netloc.lstrip(os.path.sep)
+    host = f"{os.path.sep}{host}{os.path.sep}"
     if os.name != "nt":
         host = f"{os.path.sep}{host}"
     return Path(host).joinpath(
