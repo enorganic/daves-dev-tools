@@ -473,7 +473,7 @@ def url2path(url: str) -> Path:
     host: str = parse_result.netloc.lstrip(os.path.sep)
     if os.name != "nt":
         host = f"{os.path.sep}{host}"
-    return Path(f"{os.path.sep}{parse_result.netloc}").joinpath(
+    return Path(host).joinpath(
         f"{os.path.sep}{url2pathname(parse_result.path).lstrip(os.path.sep)}"
     )
 
