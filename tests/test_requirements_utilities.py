@@ -34,7 +34,11 @@ class TestRequirementsUtilities(unittest.TestCase):
             )
         path: Path
         for path in map(Path, paths):
-            assert str(url2path(path.as_uri())) == str(path)
+            path_name: str = str(path)
+            converted_path_name: str = str(url2path(path.as_uri()))
+            assert (
+                path_name == converted_path_name
+            ), f"{repr(path_name)} != {repr(converted_path_name)}"
 
 
 if __name__ == "__main__":
