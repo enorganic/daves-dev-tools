@@ -40,8 +40,9 @@ def main() -> None:
         except ImportError:
             module = import_module(f"{_module_name}.{command}")
         module.main()  # type: ignore
-    except Exception:
+    except ImportError:
         _print_help()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
