@@ -5,7 +5,7 @@ import os
 from collections import deque
 from shlex import quote
 from itertools import chain
-from subprocess import check_output
+from subprocess import check_output, list2cmdline
 from urllib.parse import urlparse, urlunparse, ParseResult, quote as _quote
 from typing import (
     Any,
@@ -167,12 +167,7 @@ def run_module_as_main(
     try:
         if echo:
             print(
-                " ".join(
-                    map(
-                        quote,
-                        [sys.executable, "-m", module_name] + arguments,
-                    )
-                )
+                list2cmdline([sys.executable, "-m", module_name] + arguments)
             )
         # Plugging a dummy function into `sys.exit` is necessary to avoid CLI
         # tools such as pip from ending the current process

@@ -125,11 +125,6 @@ def _iter_frozen_requirements(
             install_requirement(distribution_name, echo=False)
             distribution = get_distribution(distribution_name)
         requirement_string: str = str(distribution.as_requirement())
-        # Only include dataclasses for python 3.6
-        if distribution_name == "dataclasses":
-            requirement_string = (
-                f'{requirement_string}; python_version == "3.6"'
-            )
         return requirement_string
 
     def get_required_distribution_names_(requirement_string: str) -> Set[str]:

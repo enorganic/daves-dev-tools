@@ -1,14 +1,20 @@
-# python 3.6 is used, for the time being, in order to ensure compatibility
 install:
-	{ python3.6 -m venv venv || python3 -m venv venv || \
-	py -3.6 -m venv venv || py -3 -m venv venv ; } && \
+	{ rm -R venv || echo "" ; } && \
+	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	{ python3 -m pip install --upgrade pip || echo "" ; } && \
-	python3 -m pip install pre-commit && \
-	python3 -m pip install -r requirements.txt -e '.[all]' && \
+	pip install --upgrade pip wheel && \
+	pip install pre-commit && \
+	pip install -r requirements.txt -e . --config-settings editable_mode=compat && \
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
 	{ mypy --install-types --non-interactive || echo "" ; } && \
+	echo "Installation complete"
+
+ci-install:
+	{ python -m venv venv || py -3 -m venv venv ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	pip install --upgrade pip wheel && \
+	pip install -r requirements.txt -e . && \
 	echo "Installation complete"
 
 editable:
@@ -19,7 +25,7 @@ editable:
 clean:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools uninstall-all\
-	 -e '.[all]'\
+	 -e .\
      -e pyproject.toml\
      -e tox.ini\
 	 -e pre-commit\
@@ -32,11 +38,12 @@ distribute:
 
 upgrade:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	pip install --upgrade pre-commit && \
 	pre-commit autoupdate && \
 	daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini \
 	 > .requirements.txt && \
-	python3 -m pip install --upgrade --upgrade-strategy eager\
+	pip install --upgrade --upgrade-strategy eager\
 	 -r .requirements.txt && \
 	rm .requirements.txt && \
 	make requirements
@@ -49,8 +56,7 @@ requirements:
 	daves-dev-tools requirements freeze\
 	 -e pip\
 	 -e wheel\
-	 -nv '*'\
-	 '.[all]' pyproject.toml tox.ini\
+	 . pyproject.toml tox.ini\
 	 > requirements.txt
 
 test:
