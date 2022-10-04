@@ -11,7 +11,7 @@ install:
 	echo "Installation complete"
 
 ci-install:
-	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
+	{ python -m venv venv || py -3 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install -r requirements.txt -e . && \
