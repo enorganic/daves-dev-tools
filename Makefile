@@ -1,6 +1,5 @@
-# python 3.6 is used, for the time being, in order to ensure compatibility
 install:
-	{ rm -R venv || echo ""; } && \
+	{ rm -R venv || echo "" ; } && \
 	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
@@ -9,6 +8,13 @@ install:
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
 	{ mypy --install-types --non-interactive || echo "" ; } && \
+	echo "Installation complete"
+
+ci-install:
+	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	pip install --upgrade pip wheel && \
+	pip install -r requirements.txt -e . && \
 	echo "Installation complete"
 
 editable:
