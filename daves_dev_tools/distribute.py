@@ -10,13 +10,9 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
-    Optional,
-    Tuple,
 )
 from subprocess import check_output
-from .utilities import sys_argv_get, sys_argv_pop, run_module_as_main
-
-from .cerberus import apply_sys_argv_cerberus_arguments
+from .utilities import sys_argv_pop, run_module_as_main
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -79,14 +75,8 @@ def _get_help() -> bool:
             universal_newlines=True,
         ).strip()
         help_ = re.sub(
-            r"\btwine upload\b( \[-h\])?",
-            (
-                "daves-dev-tools distribute\\1 "
-                "[-cu CERBERUS_URL]\n"
-                "                    [-cup CERBERUS_USERNAME_PATH]\n"
-                "                    [-cpp CERBERUS_PASSWORD_PATH]\n"
-                "                   "
-            ),
+            r"\btwine upload\b",
+            "daves-dev-tools distribute",
             help_,
         )
         help_ = re.sub(
@@ -103,88 +93,9 @@ def _get_help() -> bool:
             ),
             help_,
         )
-        help_ = (
-            f"{help_.rstrip()}\n"
-            "  -cu CERBERUS_URL, --cerberus-url CERBERUS_URL\n"
-            "                        The base URL of a Cerberus REST API.\n"
-            "                        See: https://swoo.sh/3DBW2Vb\n"
-            "  -cup CERBERUS_USERNAME_PATH, --cerberus-username-path "
-            "CERBERUS_USERNAME_PATH\n"
-            "                        A Cerberus secure data path (including "
-            "/key) wherein a\n"
-            "                        username with which to authenticate can "
-            "be found.\n"
-            "                        See: https://swoo.sh/3DBW2Vb\n"
-            "  -cpp CERBERUS_PASSWORD_PATH, --cerberus-password-path "
-            "CERBERUS_PASSWORD_PATH\n"
-            "                        A Cerberus secure data path (including "
-            "/key) wherein a\n"
-            "                        password with which to authenticate can "
-            "be found.\n"
-            "                        If no USERNAME or CERBERUS_USERNAME_PATH "
-            "is provided,\n"
-            "                        the last part of this path \n"
-            "                        (the secure data path entry key) is "
-            "inferred as your\n"
-            "                        username. See: https://swoo.sh/3DBW2Vb\n"
-        )
         print(help_)
         return True
     return False
-
-
-def _get_credentials_from_cerberus() -> None:
-    """
-    If `--cerberus-url` and `--cerberus-path` keyword arguments are provided,
-    retrieve the repository credentials and apply them to their corresponding
-    static arguments.
-    """
-    cerberus_password_path_keywords: Tuple[str, str, str, str] = (
-        "-cpp",
-        "--cerberus-password-path",
-        # For backwards compatibility
-        "-cp",
-        "--cerberus-path",
-    )
-    username: Optional[str] = sys_argv_get(  # type: ignore
-        ("-u", "--username")
-    )
-    cerberus_password_path: Optional[str] = sys_argv_get(  # type: ignore
-        cerberus_password_path_keywords
-    )
-    if cerberus_password_path:
-        cerberus_password_path = cerberus_password_path.strip("/ ")
-        cerberus_password_path_list: List[str] = cerberus_password_path.split(
-            "/"
-        )
-        path_length: int = len(cerberus_password_path_list)
-        if path_length == 3 and username:
-            # Append the SDB key
-            sys_argv_pop(cerberus_password_path_keywords, flag=False)
-            sys.argv += [
-                cerberus_password_path_keywords[0],
-                f"{cerberus_password_path}/{username}",
-            ]
-        elif path_length == 4:
-            if not username:
-                # Infer the username to be the SDB key
-                sys.argv += ["-u", cerberus_password_path_list[-1]]
-        else:
-            raise ValueError(
-                "The value for -cpp or --cerberus-password-path must be "
-                "formatted either as:\n"
-                '- "namespace/safe-deposit-box/secret" '
-                "(if a `--username` is provided) or\n"
-                '- "namespace/safe-deposit-box/secret/key"\n'
-                f"...not: {repr(cerberus_password_path)}"
-            )
-    apply_sys_argv_cerberus_arguments(
-        ("-cu", "--cerberus-url"),
-        {
-            "-u": ("-cup", "--cerberus-username-path"),
-            "-p": cerberus_password_path_keywords,
-        },
-    )
 
 
 def _dist(
@@ -209,7 +120,6 @@ def _cleanup(directory: str) -> None:
 
 def main() -> None:
     if not _get_help():
-        _get_credentials_from_cerberus()
         directory: str = sys_argv_pop(depth=2, default=".")  # type: ignore
         directory = os.path.abspath(directory).rstrip("/")
         try:

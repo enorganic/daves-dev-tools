@@ -2,7 +2,6 @@ import unittest
 import os
 import tomli
 import sys
-import pytest
 from typing import Iterable
 from configparser import ConfigParser
 from packaging.requirements import Requirement
@@ -43,14 +42,15 @@ def validate_zero_specifier(specifier: Specifier) -> None:
 
 
 def validate_requirement(requirement_string: str) -> None:
+    print(requirement_string)
     if requirement_string:
         print(requirement_string)
         requirement: Requirement = Requirement(requirement_string)
         if requirement.name == "pip":
             assert not requirement.specifier, requirement_string
         elif requirement.name == "setuptools" or (
-            requirement.name == "dataclasses"
-            and sys.version_info[:2] != (3, 6)
+            requirement.name == "jsonpointer"
+            and sys.version_info[:2] <= (3, 7)
         ):
             list(
                 map(
@@ -79,7 +79,6 @@ class TestRequirementsUpdate(unittest.TestCase):
     `daves_dev_tools.requirements.update`
     """
 
-    @pytest.mark.cerberus
     def test_get_updated_setup_cfg(self) -> None:
         """
         Ensure that updating a setup.cfg file occurs without problems

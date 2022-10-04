@@ -14,17 +14,6 @@ You can install daves-dev-tools with pip:
 pip3 install daves-dev-tools
 ```
 
-In order to use some features of this library, you will need to specify
-one or more *extras*:
-
-- "cerberus": This extra installs requirements needed in order to import
-  `daves_dev_tools.cerberus`, which provides utilities for interacting
-  with a [Cerberus](https://engineering.nike.com/cerberus/) vault.
-
-  ```shell
-  pip3 install daves-dev-tools[cerberus]
-  ```
-
 ## Usage
 
 ### Command Line Interface
@@ -297,9 +286,7 @@ optional arguments:
 
 ```text
 $ daves-dev-tools distribute -h
-usage: daves-dev-tools distribute [-h] [-cu CERBERUS_URL]
-                    [-cup CERBERUS_USERNAME_PATH]
-                    [-cpp CERBERUS_PASSWORD_PATH]
+usage: daves-dev-tools distribute [-h]
                     [-r REPOSITORY] [--repository-url REPOSITORY_URL]
                     [-s] [--sign-with SIGN_WITH] [-i IDENTITY] [-u USERNAME]
                     [-p PASSWORD] [--non-interactive] [-c COMMENT]
@@ -353,18 +340,4 @@ optional arguments:
   --verbose             Show verbose output.
   --disable-progress-bar
                         Disable the progress bar.
-  -cu CERBERUS_URL, --cerberus-url CERBERUS_URL
-                        The base URL of a Cerberus REST API.
-                        See: https://swoo.sh/3DBW2Vb
-  -cup CERBERUS_USERNAME_PATH, --cerberus-username-path CERBERUS_USERNAME_PATH
-                        A Cerberus secure data path (including /key) wherein a
-                        username with which to authenticate can be found.
-                        See: https://swoo.sh/3DBW2Vb
-  -cpp CERBERUS_PASSWORD_PATH, --cerberus-password-path CERBERUS_PASSWORD_PATH
-                        A Cerberus secure data path (including /key) wherein a
-                        password with which to authenticate can be found.
-                        If no USERNAME or CERBERUS_USERNAME_PATH is provided,
-                        the last part of this path
-                        (the secure data path entry key) is inferred as your
-                        username. See: https://swoo.sh/3DBW2Vb
 ```

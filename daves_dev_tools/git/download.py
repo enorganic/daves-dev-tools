@@ -6,7 +6,6 @@ from itertools import chain
 from shutil import rmtree
 from typing import Iterable, List, Tuple, Iterator
 from glob import iglob
-from ..cerberus import apply_cerberus_path_arguments
 from ..utilities import update_url_user_password
 
 
@@ -14,11 +13,6 @@ def _iglob_recursive(pathname: str) -> Iterator[str]:
     return iglob(pathname, recursive=True)
 
 
-@apply_cerberus_path_arguments(
-    "cerberus_url",
-    user="user_cerberus_path",
-    password="password_cerberus_path",
-)
 def download(
     repo: str,
     files: Iterable[str] = ("**",),
@@ -26,9 +20,6 @@ def download(
     branch: str = "",
     user: str = "",
     password: str = "",
-    cerberus_url: str = "",
-    user_cerberus_path: str = "",
-    password_cerberus_path: str = "",
 ) -> List[str]:
     """
     Download files from a git repository and return a list of the files
@@ -46,13 +37,6 @@ def download(
       files will be retrieved from HEAD)
     - user (str) = ""
     - password (str) = ""
-    - cerberus_url (str) = "": A Cerberus API URL
-    - cerberus_user_path (str) = "":
-      The path to a Cerberus secure drop box secret where the username can be
-      found
-    - cerberus_password_path (str) = "":
-      The path to a Cerberus secure drop box secret where the password can be
-      found
     """
     if isinstance(files, str):
         files = (files,)
@@ -143,35 +127,6 @@ def main() -> None:
         type=str,
         help="A password for accessing the repository",
     )
-    parser.add_argument(
-        "-cu",
-        "--cerberus-url",
-        default="",
-        type=str,
-        help=(
-            "The base URL of a Cerberus REST API. See: https://swoo.sh/3DBW2Vb"
-        ),
-    )
-    parser.add_argument(
-        "-ucp",
-        "--user-cerberus-path",
-        default="",
-        type=str,
-        help=(
-            "A Cerberus secure data path (including /key) wherein a "
-            "username with which to authenticate can be found."
-        ),
-    )
-    parser.add_argument(
-        "-pcp",
-        "--password-cerberus-path",
-        default="",
-        type=str,
-        help=(
-            "A Cerberus secure data path (including /key) wherein a "
-            "password with which to authenticate can be found."
-        ),
-    )
     parser.add_argument("repo", type=str, help="Reference repository")
     parser.add_argument(
         "file",
@@ -189,11 +144,8 @@ def main() -> None:
         files=arguments.file or ("**",),
         directory=arguments.directory,
         branch=arguments.branch,
-        cerberus_url=arguments.cerberus_url,
         user=arguments.user,
         password=arguments.password,
-        user_cerberus_path=arguments.user_cerberus_path,
-        password_cerberus_path=arguments.password_cerberus_path,
     )
 
 
