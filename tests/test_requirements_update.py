@@ -1,7 +1,6 @@
 import unittest
 import os
 import tomli
-import sys
 from typing import Iterable
 from configparser import ConfigParser
 from packaging.requirements import Requirement
@@ -46,9 +45,7 @@ def validate_requirement(requirement_string: str) -> None:
     if requirement_string:
         print(requirement_string)
         requirement: Requirement = Requirement(requirement_string)
-        if requirement.name in ("pip", "setuptools") or (
-            requirement.name == "tomli" and sys.version_info[:2] <= (3, 7)
-        ):
+        if requirement.name in ("pip", "setuptools"):
             list(
                 map(
                     validate_zero_specifier,  # type: ignore
@@ -121,10 +118,7 @@ class TestRequirementsUpdate(unittest.TestCase):
             # Update versions for all packages *except* pip
             updated_pyproject_toml_data = get_updated_pyproject_toml(
                 pyproject_toml_data,
-                ignore=(
-                    ("pip", "setuptools")
-                    + (("tomli",) if sys.version_info[:2] > (3, 7) else ())
-                ),
+                ignore=("pip", "setuptools"),
             )
             print(
                 f"{pyproject_toml_path.strip()}\n\n"
