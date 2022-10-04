@@ -46,11 +46,8 @@ def validate_requirement(requirement_string: str) -> None:
     if requirement_string:
         print(requirement_string)
         requirement: Requirement = Requirement(requirement_string)
-        if requirement.name == "pip":
-            assert not requirement.specifier, requirement_string
-        elif requirement.name == "setuptools" or (
-            requirement.name == "jsonpointer"
-            and sys.version_info[:2] <= (3, 7)
+        if requirement.name in ("pip", "setuptools") or (
+            requirement.name == "tomli" and sys.version_info[:2] <= (3, 7)
         ):
             list(
                 map(
@@ -123,7 +120,11 @@ class TestRequirementsUpdate(unittest.TestCase):
             pyproject_toml_data: str = pyproject_toml_io.read()
             # Update versions for all packages *except* pip
             updated_pyproject_toml_data = get_updated_pyproject_toml(
-                pyproject_toml_data, ignore=("pip", "setuptools")
+                pyproject_toml_data,
+                ignore=(
+                    ("pip", "setuptools")
+                    + (("tomli",) if sys.version_info[:2] > (3, 7) else ())
+                ),
             )
             print(
                 f"{pyproject_toml_path.strip()}\n\n"
