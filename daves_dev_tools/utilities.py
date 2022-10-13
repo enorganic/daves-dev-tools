@@ -1,9 +1,9 @@
 import functools
 import runpy
+from shutil import which
 import sys
 import os
 from collections import deque
-from shlex import quote
 from itertools import chain
 from subprocess import check_output, list2cmdline
 from urllib.parse import urlparse, urlunparse, ParseResult, quote as _quote
@@ -89,7 +89,7 @@ def iter_parse_delimited_values(
     return chain(*map(iter_parse_delimited_value_, values))
 
 
-def run(command: Sequence[str], echo: bool = True) -> str:
+def run(command: Sequence[str], echo: bool = True, input: str = "") -> str:
     """
     This function runs a shell command, raises an error if a non-zero
     exit code is returned, and echo's both the command and output *if*
@@ -100,19 +100,25 @@ def run(command: Sequence[str], echo: bool = True) -> str:
     - command (str|[str]): A shell command
     - echo (bool) = True: If `True`, the command and the output from the
       command will be printed to stdout
+    - input (str)
     """
+    if command and not isinstance(command, str):
+        path: Optional[str] = which(command[0])
+        if path:
+            command = (path,) + tuple(command[1:])
     if echo:
         command_str: str
         if isinstance(command, str):
             command_str = command
         else:
-            command_str = " ".join(map(quote, command))
+            command_str = list2cmdline(command)
         print(command_str)
-    output: str = check_output(
+    output: str = check_output(  # type: ignore
         command,
         encoding="utf-8",
         universal_newlines=True,
         shell=isinstance(command, str),
+        **dict(filter(all, (("input", input),))),
     ).strip()
     if echo:
         try:

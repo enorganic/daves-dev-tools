@@ -3,6 +3,7 @@ from runpy import run_path
 import sys
 import os
 from shutil import rmtree
+from tempfile import mkdtemp
 from types import ModuleType
 import tomli
 import pkg_resources
@@ -167,6 +168,49 @@ def refresh_working_set() -> None:
     pkg_resources.working_set.__init__()  # type: ignore
 
 
+def _iter_find_dist_info(directory: Path, project_name: str) -> Iterable[Path]:
+    """
+    Find all *.dist-info directories for a project in the specified directory
+    (there shouldn't be more than one, but pip issues can cause there to
+    be on occasions).
+    """
+    yield from filter(
+        Path.is_dir,
+        directory.glob(
+            f"{pkg_resources.to_filename(project_name)}" "-*.dist-info"
+        ),
+    )
+
+
+def _move_dist_info_to_temp_directory(
+    directory: Path, project_name: str
+) -> Path:
+    """
+    Move the contents of *.dist-info directories for a project into a temporary
+    directory, and return the path to that temp directory.
+    """
+    temp_directory: Path = Path(mkdtemp())
+    dist_info_directory: Path
+    for dist_info_directory in _iter_find_dist_info(directory, project_name):
+        file_path: Path
+        for file_path in dist_info_directory.iterdir():
+            file_path.rename(temp_directory.joinpath(file_path.name))
+        rmtree(dist_info_directory)
+    return temp_directory
+
+
+def _merge_directories(
+    source_directory: Path, target_directory: Path, overwrite: bool = False
+) -> None:
+    source_file_path: Path
+    target_file_path: Path
+    for source_file_path in source_directory.iterdir():
+        target_file_path = target_directory.joinpath(source_file_path.name)
+        if overwrite or (not target_file_path.exists()):
+            source_file_path.rename(target_file_path)
+    rmtree(source_directory)
+
+
 def refresh_editable_distributions() -> None:
     """
     Update distribution information for editable installs
@@ -177,11 +221,31 @@ def refresh_editable_distributions() -> None:
         distribution: pkg_resources.Distribution = (
             pkg_resources.get_distribution(name)
         )
-        egg_base: str = str(Path(getattr(distribution, "egg_info")).parent)
-        if egg_base == location:
-            setup_egg_info(location)
-        else:
-            setup_dist_info(location, egg_base)
+        egg_base: Path = Path(getattr(distribution, "egg_info")).parent
+        # Find pre-existing dist-info directories, and rename them so that
+        # the new dist-info directory doesn't overwrite the old one, then
+        # merge the two directories, replacing old files with new files
+        # when they exist in both
+        temp_directory: Path = _move_dist_info_to_temp_directory(
+            egg_base, distribution.project_name
+        )
+        try:
+            if egg_base == location:
+                setup_egg_info(location)
+            else:
+                setup_dist_info(location, egg_base)
+        finally:
+            _merge_directories(
+                temp_directory,
+                next(
+                    iter(
+                        _iter_find_dist_info(
+                            egg_base, distribution.project_name
+                        )
+                    )
+                ),
+                overwrite=False,
+            )
     pkg_resources.working_set.entries = []
     pkg_resources.working_set.__init__()  # type: ignore
 
@@ -470,7 +534,7 @@ def get_editable_distribution_location(name: str) -> str:
     return get_editable_distributions_locations().get(normalize_name(name), "")
 
 
-def setup_dist_info(directory: str, output_dir: str = "") -> None:
+def setup_dist_info(directory: str, output_dir: Union[str, Path] = "") -> None:
     """
     Refresh dist-info for the editable package installed in
     `directory`
@@ -478,6 +542,8 @@ def setup_dist_info(directory: str, output_dir: str = "") -> None:
     directory = os.path.abspath(directory)
     if not os.path.isdir(directory):
         directory = os.path.dirname(directory)
+    if isinstance(output_dir, Path):
+        output_dir = str(output_dir)
     return _setup_location(
         directory,
         (
@@ -627,20 +693,7 @@ def _install_requirement_string(
 ) -> None:
     uncaught_error: Optional[Exception] = None
     flags: Tuple[str, ...]
-    for flags in chain(
-        ((), ("--user",)),
-        (
-            (
-                ("--force-reinstall",),
-                (
-                    "--user",
-                    "--force-reinstall",
-                ),
-            )
-            if editable
-            else ()
-        ),
-    ):
+    for flags in ((),) + ((("--force-reinstall",),) if editable else ()):
         if editable:
             flags += ("-e",)
         try:

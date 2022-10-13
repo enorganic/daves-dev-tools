@@ -3,8 +3,7 @@ install:
 	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
-	pip install pre-commit && \
-	pip install -r requirements.txt -e . --config-settings editable_mode=compat && \
+	pip install -c requirements.txt pre-commit flake8 mypy black tox pytest -e . && \
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
 	{ mypy --install-types --non-interactive || echo "" ; } && \
