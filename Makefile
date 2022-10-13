@@ -13,7 +13,7 @@ ci-install:
 	{ python -m venv venv || py -3 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
-	pip install -r requirements.txt -e . && \
+	pip install -c requirements.txt tox -e . && \
 	echo "Installation complete"
 
 editable:
