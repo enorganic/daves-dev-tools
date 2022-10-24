@@ -1,13 +1,13 @@
 import functools
-from runpy import run_path
 import sys
 import os
-from shutil import rmtree
-from tempfile import mkdtemp
-from types import ModuleType
 import tomli
 import pkg_resources
 import importlib_metadata
+from runpy import run_path
+from shutil import rmtree, move
+from tempfile import mkdtemp
+from types import ModuleType
 from glob import iglob
 from pathlib import Path
 from subprocess import check_output, CalledProcessError
@@ -194,7 +194,7 @@ def _move_dist_info_to_temp_directory(
     for dist_info_directory in _iter_find_dist_info(directory, project_name):
         file_path: Path
         for file_path in dist_info_directory.iterdir():
-            file_path.rename(temp_directory.joinpath(file_path.name))
+            move(str(file_path), temp_directory.joinpath(file_path.name))
         rmtree(dist_info_directory)
     return temp_directory
 
