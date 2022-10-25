@@ -207,7 +207,7 @@ def _merge_directories(
     for source_file_path in source_directory.iterdir():
         target_file_path = target_directory.joinpath(source_file_path.name)
         if overwrite or (not target_file_path.exists()):
-            source_file_path.rename(target_file_path)
+            move(str(source_file_path), target_file_path)
     rmtree(source_directory)
 
 

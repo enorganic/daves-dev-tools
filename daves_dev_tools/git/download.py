@@ -3,7 +3,7 @@ import os
 from subprocess import check_call
 from tempfile import mkdtemp
 from itertools import chain
-from shutil import rmtree
+from shutil import move, rmtree
 from typing import Iterable, List, Tuple, Iterator
 from glob import iglob
 from ..utilities import update_url_user_password
@@ -81,7 +81,7 @@ def download(
         if os.path.sep in relative_path:
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
         print(new_path)
-        os.rename(path, new_path)
+        move(path, new_path)
         downloaded_paths.append(new_path)
     rmtree(temp_directory, ignore_errors=True)
     return downloaded_paths
