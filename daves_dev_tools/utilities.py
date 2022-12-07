@@ -163,7 +163,7 @@ def run_module_as_main(
     - echo (bool) = False: If `True`, an equivalent shell command is printed
       to sys.stdout.
     """
-    prior_sys_exit: Callable[[object], NoReturn] = sys.exit
+    prior_sys_exit: Callable[[Union[str, int, None]], NoReturn] = sys.exit
     prior_sys_argv: List[str] = sys.argv
     if not isinstance(arguments, list):
         arguments = list(arguments)
