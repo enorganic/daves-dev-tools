@@ -51,7 +51,6 @@ def normalize_name(name: str) -> str:
 
 
 class ConfigurationFileType(Enum):
-
     REQUIREMENTS_TXT = auto()
     SETUP_CFG = auto()
     TOX_INI = auto()

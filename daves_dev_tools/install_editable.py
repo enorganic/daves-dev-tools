@@ -97,7 +97,7 @@ def _iter_find_distributions(
 def _get_distribution_major_version(name: str) -> int:
     version: str = ""
     try:
-        version = pkg_resources.get_distribution("setuptools").version
+        version = pkg_resources.get_distribution(name).version
     except Exception:
         try:
             version = get_distribution(name).version
