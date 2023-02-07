@@ -67,16 +67,14 @@ def _update_requirement_specifiers(
     This function updates specifier version numbers for a requirement
     to match the installed version of the package
     """
-    installed_version: Union[Version] = parse_version(installed_version_string)
+    installed_version: Version = parse_version(installed_version_string)
     specifier: Specifier
     updated_specifier_strings: List[str] = []
     for specifier in requirement.specifier:  # type: ignore
         # Only update requirement to match our installed version
         # if the requirement is *inclusive*
         if ("=" in specifier.operator) and ("!" not in specifier.operator):
-            specifier_version: Union[Version] = parse_version(
-                specifier.version
-            )
+            specifier_version: Version = parse_version(specifier.version)
             assert installed_version.release is not None
             if specifier_version.release is None:
                 updated_specifier_strings.append(f"{specifier.operator}")
