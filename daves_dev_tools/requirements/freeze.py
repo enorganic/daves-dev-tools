@@ -246,8 +246,8 @@ def main() -> None:
         action="append",
         help=(
             "Don't include versions (only output distribution names) "
-            "for packages matching this glob pattern (note: the value must "
-            "be single-quoted if it contain wildcards)"
+            "for packages matching this/these glob pattern(s) (note: the "
+            "value must be single-quoted if it contains wildcards)"
         ),
     )
     arguments: argparse.Namespace = parser.parse_args()
