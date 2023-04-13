@@ -1,5 +1,5 @@
 install:
-	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
+	{ python3 -m venv venv || py -3 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install -c requirements.txt pre-commit flake8 mypy black tox pytest -e . && \
