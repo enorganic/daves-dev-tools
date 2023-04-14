@@ -821,6 +821,8 @@ def _iter_requirement_names(
     def iter_requirement_names_(
         requirement_: pkg_resources.Requirement,
     ) -> Iterable[str]:
+        if requirement_.marker and not requirement_.marker.evaluate():
+            requirement_.marker = None
         return _iter_requirement_names(
             requirement_,
             exclude=(
