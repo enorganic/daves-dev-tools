@@ -1,5 +1,8 @@
+SHELL := bash
+
 install:
-	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
+	{ rm -R venv || echo "" ; } && \
+	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install -c requirements.txt pre-commit flake8 mypy black tox pytest -e . && \
@@ -17,7 +20,7 @@ ci-install:
 
 reinstall:
 	{ rm -R venv || echo "" ; } && \
-	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
+	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install pre-commit flake8 mypy black tox pytest -e . && \
@@ -61,7 +64,7 @@ upgrade:
 requirements:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools requirements update\
-	 -aen all\
+	 -i more-itertools -aen all\
 	 setup.cfg pyproject.toml tox.ini && \
 	daves-dev-tools requirements freeze\
 	 -e pip\
@@ -69,5 +72,7 @@ requirements:
 	 . pyproject.toml tox.ini\
 	 > requirements.txt
 
+# Run all tests
 test:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && python3 -m tox -r
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	[[ "$$(python -V)" = "Python 3.8."* ]] && python3 -m tox -r -p -o || python3 -m tox -r -e pytest

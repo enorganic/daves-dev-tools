@@ -1,7 +1,9 @@
 # daves-dev-tools
 
-[![tests](https://github.com/enorganic/daves-dev-tools/actions/workflows/test-distribute.yml/badge.svg?branch=main)](https://github.com/enorganic/daves-dev-tools/actions/workflows/test-distribute.yml)
+[![test](https://github.com/enorganic/daves-dev-tools/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/enorganic/daves-dev-tools/actions/workflows/test.yml)
 [![CodeQL](https://github.com/enorganic/daves-dev-tools/actions/workflows/codeql-analysis.yml/badge.svg?branch=main)](https://github.com/enorganic/daves-dev-tools/actions/workflows/codeql-analysis.yml)
+[![distribute](https://github.com/enorganic/daves-dev-tools/actions/workflows/distribute.yml/badge.svg?branch=main)](https://github.com/enorganic/daves-dev-tools/actions/workflows/distribute.yml)
+
 
 This project provides command line utilities for performing common python
 development tasks.
