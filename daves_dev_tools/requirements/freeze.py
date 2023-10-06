@@ -1,19 +1,21 @@
-import pkg_resources
 import argparse
 from fnmatch import fnmatch
 from itertools import chain
-from typing import Iterable, Tuple, Set
+from typing import Iterable, Set, Tuple
+
+import pkg_resources
 from more_itertools import unique_everseen
-from .utilities import (
-    get_required_distribution_names,
-    get_distribution,
-    install_requirement,
-    iter_configuration_file_requirement_strings,
-    get_requirement_string_distribution_name,
-    normalize_name,
-    is_configuration_file,
-)
+
 from ..utilities import iter_parse_delimited_values
+from .utilities import (
+    get_distribution,
+    get_required_distribution_names,
+    get_requirement_string_distribution_name,
+    install_requirement,
+    is_configuration_file,
+    iter_configuration_file_requirement_strings,
+    normalize_name,
+)
 
 _DO_NOT_PIN_DISTRIBUTION_NAMES: Set[str] = {
     # standard library

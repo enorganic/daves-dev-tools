@@ -1,7 +1,8 @@
 import argparse
 import os
+from subprocess import check_call, check_output
 from typing import Iterable
-from subprocess import check_output, check_call
+
 from ..requirements.utilities import get_setup_distribution_version
 
 

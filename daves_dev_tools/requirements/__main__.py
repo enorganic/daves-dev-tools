@@ -1,8 +1,8 @@
 import sys
 from importlib import import_module
 from types import ModuleType
-from ..errors import get_exception_text
 
+from ..errors import get_exception_text
 from . import __name__ as _module_name
 
 

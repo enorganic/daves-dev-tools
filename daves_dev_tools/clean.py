@@ -4,19 +4,11 @@ This module cleans up files which are ignored by git
 import argparse
 import os
 import shutil
-from subprocess import check_output, check_call
 from collections import deque
 from glob import iglob
 from itertools import chain
-from typing import (
-    Dict,
-    Tuple,
-    Iterable,
-    Sequence,
-    Set,
-    FrozenSet,
-    List,
-)
+from subprocess import check_call, check_output
+from typing import Dict, FrozenSet, Iterable, List, Sequence, Set, Tuple
 
 ROOT_DIRECTORY: str = "."
 DEFAULT_EXCLUDE: Tuple[str, ...] = (

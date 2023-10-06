@@ -1,23 +1,24 @@
 import argparse
-import pkg_resources
+import os
 import re
 import sys
-import os
-from subprocess import list2cmdline
 from glob import glob
 from itertools import chain
 from pipes import quote
-from typing import Iterable, Set, List, Tuple, Pattern, Sequence
+from subprocess import list2cmdline
+from typing import Iterable, List, Pattern, Sequence, Set, Tuple
+
+import pkg_resources
+
 from .requirements.utilities import (
     get_distribution,
     get_installed_distributions,
     get_requirements_required_distribution_names,
-    normalize_name,
     get_setup_distribution_name,
     is_installed,
+    normalize_name,
 )
 from .utilities import iter_parse_delimited_values, iter_sys_argv_pop, run
-
 
 _SETUP_NAMES: Set[str] = {"setup.cfg", "setup.py"}
 EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS: Tuple[str, ...] = (

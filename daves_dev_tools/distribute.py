@@ -3,16 +3,11 @@ import os
 import re
 import sys
 from distutils.core import run_setup
-from time import time
-from typing import (
-    Any,
-    Callable,
-    FrozenSet,
-    Iterable,
-    List,
-)
 from subprocess import check_output
-from .utilities import sys_argv_pop, run_module_as_main
+from time import time
+from typing import Any, Callable, FrozenSet, Iterable, List
+
+from .utilities import run_module_as_main, sys_argv_pop
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -113,7 +108,9 @@ def _cleanup(directory: str) -> None:
     current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(directory)
     try:
-        run_setup(os.path.join(directory, "setup.py"), ["clean", "--all"])
+        run_setup(
+            os.path.join(directory, "setup.py"), ["clean", "--all", "--force"]
+        )
     finally:
         os.chdir(current_directory)
 

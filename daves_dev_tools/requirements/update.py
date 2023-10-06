@@ -1,33 +1,36 @@
-import os
 import argparse
-import tomli
-import tomli_w
+import os
 import re
-from io import StringIO
-from dataclasses import dataclass
-from pkg_resources import Distribution
 from configparser import ConfigParser, SectionProxy
+from dataclasses import dataclass
+from io import StringIO
 from typing import (
+    IO,
+    Any,
+    Callable,
     Dict,
     Iterable,
-    IO,
     List,
-    Callable,
-    Set,
-    Union,
-    Tuple,
-    Any,
     Optional,
+    Set,
+    Tuple,
+    Union,
 )
-from packaging.specifiers import Specifier, SpecifierSet
-from packaging.requirements import Requirement
-from packaging.version import Version, parse as parse_version
+
+import tomli
+import tomli_w
 from more_itertools import unique_everseen
+from packaging.requirements import Requirement
+from packaging.specifiers import Specifier, SpecifierSet
+from packaging.version import Version
+from packaging.version import parse as parse_version
+from pkg_resources import Distribution
+
 from ..utilities import iter_parse_delimited_values
 from .utilities import (
-    normalize_name,
     get_installed_distributions,
     is_requirement_string,
+    normalize_name,
 )
 
 

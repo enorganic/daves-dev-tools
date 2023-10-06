@@ -1,8 +1,9 @@
 import argparse
 import sys
-from pipes import quote
 from itertools import chain
+from pipes import quote
 from typing import Iterable, Tuple
+
 from .requirements.utilities import (
     get_installed_distributions,
     get_requirements_required_distribution_names,

@@ -1,11 +1,12 @@
 import argparse
 import os
-from subprocess import check_call
-from tempfile import mkdtemp
+from glob import iglob
 from itertools import chain
 from shutil import move, rmtree
-from typing import Iterable, List, Tuple, Iterator
-from glob import iglob
+from subprocess import check_call
+from tempfile import mkdtemp
+from typing import Iterable, Iterator, List, Tuple
+
 from ..utilities import update_url_user_password
 
 
