@@ -75,7 +75,7 @@ requirements:
 # Run all tests
 test:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	if [[ "$$(python -V)" = "Python 3.10."* ]] ;\
+	if [[ "$$(python -V)" = "Python 3.8."* ]] ;\
 	then tox -r -p -o ;\
 	else tox -r -e pytest ;\
 	fi
