@@ -108,9 +108,7 @@ def _cleanup(directory: str) -> None:
     current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(directory)
     try:
-        run_setup(
-            os.path.join(directory, "setup.py"), ["clean", "--all", "--force"]
-        )
+        run_setup(os.path.join(directory, "setup.py"), ["clean", "--all"])
     finally:
         os.chdir(current_directory)
 
