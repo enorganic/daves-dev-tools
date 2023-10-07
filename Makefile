@@ -75,4 +75,11 @@ requirements:
 # Run all tests
 test:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	[[ "$$(python -V)" = "Python 3.8."* ]] && python3 -m tox -r -p -o || python3 -m tox -r -e pytest
+	if [[ "$$(python -V)" = "Python 3.8."* ]] ;\
+	then tox -r -p -o ;\
+	else tox -r -e pytest ;\
+	fi
+
+format:
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	isort . && black . && flake8 && mypy

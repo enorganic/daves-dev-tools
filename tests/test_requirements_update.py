@@ -1,17 +1,17 @@
-import unittest
 import os
-import tomli
-from typing import Iterable
+import unittest
 from configparser import ConfigParser
+from typing import Iterable
+
+import tomli
+from daves_dev_tools.requirements.update import (
+    get_updated_pyproject_toml,
+    get_updated_requirements_txt,
+    get_updated_setup_cfg,
+)
 from packaging.requirements import Requirement
 from packaging.specifiers import Specifier
 from packaging.version import Version
-from daves_dev_tools.requirements.update import (
-    get_updated_requirements_txt,
-    get_updated_setup_cfg,
-    get_updated_pyproject_toml,
-)
-
 
 TEST_PROJECT_DIRECTORY: str = os.path.join(
     os.path.dirname(__file__), "test_projects/test_project_a/"

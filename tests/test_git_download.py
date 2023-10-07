@@ -1,11 +1,11 @@
-import unittest
 import os
-from typing import List
+import unittest
+from shutil import rmtree
 from subprocess import check_output
 from tempfile import mkdtemp
-from shutil import rmtree
-from daves_dev_tools.git.download import download
+from typing import List
 
+from daves_dev_tools.git.download import download
 
 PROJECT_DIRECTORY: str = os.path.join(
     os.path.dirname(os.path.dirname(__file__))

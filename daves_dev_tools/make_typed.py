@@ -1,15 +1,13 @@
 import argparse
-from collections import deque
 import os
 import re
+from collections import deque
+from configparser import ConfigParser
 from io import StringIO
 from pathlib import Path
-from typing import IO, Set
-from typing import Tuple
-from configparser import ConfigParser
-from .requirements.utilities import (
-    iter_distribution_location_file_paths,
-)
+from typing import IO, Set, Tuple
+
+from .requirements.utilities import iter_distribution_location_file_paths
 
 
 def _get_project_and_setup_cfg_paths(path: str = ".") -> Tuple[str, str]:

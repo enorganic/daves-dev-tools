@@ -1,38 +1,40 @@
 import functools
-import sys
 import os
-import tomli
-import pkg_resources
-import importlib_metadata
-from runpy import run_path
-from shutil import rmtree, move
-from tempfile import mkdtemp
-from types import ModuleType
-from glob import iglob
-from pathlib import Path
-from subprocess import check_output, CalledProcessError
+import sys
 from collections import deque
-from warnings import warn
 from configparser import ConfigParser, SectionProxy
 from enum import Enum, auto
+from glob import iglob
 from itertools import chain
+from pathlib import Path
+from runpy import run_path
+from shutil import move, rmtree
+from subprocess import CalledProcessError, check_output
+from tempfile import mkdtemp
+from types import ModuleType
 from typing import (
-    Optional,
+    IO,
+    Any,
+    Callable,
     Dict,
     Iterable,
+    List,
+    Optional,
     Set,
     Tuple,
-    List,
-    IO,
     Union,
-    Callable,
-    Any,
 )
-from packaging.utils import canonicalize_name
-from packaging.requirements import InvalidRequirement, Requirement
+from warnings import warn
+
+import importlib_metadata
+import pkg_resources
+import tomli
 from more_itertools import unique_everseen
-from ..utilities import lru_cache, run
+from packaging.requirements import InvalidRequirement, Requirement
+from packaging.utils import canonicalize_name
+
 from ..errors import append_exception_text, get_exception_text
+from ..utilities import lru_cache, run
 
 _return_dict_str_str_lru_cache: Callable[
     [], Callable[..., Callable[..., Dict[str, str]]]

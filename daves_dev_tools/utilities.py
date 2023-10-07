@@ -1,24 +1,26 @@
 import functools
-import runpy
-from shutil import which
-import sys
 import os
+import runpy
+import sys
 from collections import deque
 from itertools import chain
+from shutil import which
 from subprocess import check_output, list2cmdline
-from urllib.parse import urlparse, urlunparse, ParseResult, quote as _quote
 from typing import (
     Any,
     Callable,
-    List,
     Iterable,
-    Sequence,
+    List,
     NoReturn,
     Optional,
-    Union,
+    Sequence,
     Set,
+    Union,
     overload,
 )
+from urllib.parse import ParseResult
+from urllib.parse import quote as _quote
+from urllib.parse import urlparse, urlunparse
 
 __all__: List[str] = [
     "lru_cache",
