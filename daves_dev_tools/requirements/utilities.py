@@ -930,4 +930,8 @@ def iter_distribution_location_file_paths(location: str) -> Iterable[str]:
     )
     if not distribution.files:
         raise RuntimeError(f"No metadata found at {metadata_path}")
-    return map(os.path.abspath, distribution.files)
+    path: str
+    return map(
+        lambda path: os.path.abspath(os.path.join(location, path)),
+        distribution.files,
+    )
