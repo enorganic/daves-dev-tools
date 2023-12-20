@@ -9,6 +9,8 @@ on:
     - setup.cfg
 jobs:
   distribute:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -18,6 +20,10 @@ jobs:
         python-version: '3.x'
     - name: install
       run: make ci-install
+    - name: tag version
+      run: venv/bin/daves-dev-tools git tag-version
+    - name: push tags
+      run: git push --tags
     - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
