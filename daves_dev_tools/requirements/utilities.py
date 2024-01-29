@@ -582,9 +582,9 @@ def setup_egg_info(directory: Union[str, Path], egg_base: str = "") -> None:
 def _get_pkg_requirement(
     requirement_string: str,
 ) -> pkg_resources.Requirement:
-    requirement: Union[
-        Requirement, pkg_resources.Requirement
-    ] = _get_requirement(requirement_string, pkg_resources.Requirement.parse)
+    requirement: Union[Requirement, pkg_resources.Requirement] = (
+        _get_requirement(requirement_string, pkg_resources.Requirement.parse)
+    )
     assert isinstance(requirement, pkg_resources.Requirement)
     return requirement
 
@@ -592,9 +592,9 @@ def _get_pkg_requirement(
 def get_requirement(
     requirement_string: str,
 ) -> Requirement:
-    requirement: Union[
-        Requirement, pkg_resources.Requirement
-    ] = _get_requirement(requirement_string, Requirement)
+    requirement: Union[Requirement, pkg_resources.Requirement] = (
+        _get_requirement(requirement_string, Requirement)
+    )
     assert isinstance(requirement, Requirement)
     return requirement
 
@@ -723,12 +723,16 @@ def _install_requirement_string(
         append_exception_text(
             uncaught_error,
             (
-                f"\nCould not install {name}"
-                if name == requirement_string
-                else (f"\nCould not install {name} from {requirement_string}")
-            )
-            if name
-            else (f"\nCould not install {requirement_string}"),
+                (
+                    f"\nCould not install {name}"
+                    if name == requirement_string
+                    else (
+                        f"\nCould not install {name} from {requirement_string}"
+                    )
+                )
+                if name
+                else (f"\nCould not install {requirement_string}")
+            ),
         )
         raise uncaught_error
 
@@ -810,9 +814,9 @@ def _iter_requirement_names(
     # Ensure we don't follow the same requirement again, causing cyclic
     # recursion
     exclude.add(name)
-    distribution: Optional[
-        pkg_resources.Distribution
-    ] = _get_pkg_requirement_distribution(requirement, name, echo=echo)
+    distribution: Optional[pkg_resources.Distribution] = (
+        _get_pkg_requirement_distribution(requirement, name, echo=echo)
+    )
     if distribution is None:
         return ()
     requirements: List[pkg_resources.Requirement] = distribution.requires(

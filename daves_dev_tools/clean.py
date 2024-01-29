@@ -1,6 +1,7 @@
 """
 This module cleans up files which are ignored by git
 """
+
 import argparse
 import os
 import shutil
@@ -267,7 +268,7 @@ clean.__doc__ = clean.__doc__.format(  # type: ignore
 
 def main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        prog="daves-dev-tool clean",
+        prog="daves-dev-tools clean",
         description=(
             "This command removes all files from your project directory which "
             "are ignored by git, unless matching one of the EXCLUDE glob "

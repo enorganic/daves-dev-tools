@@ -266,7 +266,7 @@ optional arguments:
 
 ```text
 $ daves-dev-tools clean -h
-usage: daves-dev-tool clean [-h] [-e EXCLUDE] [-dr] [directory]
+usage: daves-dev-tools clean [-h] [-e EXCLUDE] [-dr] [directory]
 
 This command removes all files from your project directory which are ignored
 by git, unless matching one of the EXCLUDE glob patterns.
