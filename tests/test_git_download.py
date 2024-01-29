@@ -32,9 +32,9 @@ class TestGitDownload(unittest.TestCase):
                 os.path.abspath(os.path.curdir), "TEMP"
             )
             os.makedirs(temp_directory, exist_ok=True)
-            os.environ["TMPDIR"] = os.environ["TEMP"] = os.environ[
-                "TMP"
-            ] = temp_directory
+            os.environ["TMPDIR"] = os.environ["TEMP"] = os.environ["TMP"] = (
+                temp_directory
+            )
         temp_directory = mkdtemp(prefix="test_git_download_")
         current_directory: str = os.path.abspath(os.path.curdir)
         os.chdir(PROJECT_DIRECTORY)
