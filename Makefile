@@ -1,8 +1,9 @@
 SHELL := bash
+PYTHON_VERSION := 3.8
 
 install:
 	{ rm -R venv || echo "" ; } && \
-	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
+	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install -c requirements.txt pre-commit flake8 mypy black tox pytest -e . && \
@@ -20,10 +21,10 @@ ci-install:
 
 reinstall:
 	{ rm -R venv || echo "" ; } && \
-	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
+	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
-	pip install pre-commit flake8 mypy black tox pytest -e . && \
+	pip install pre-commit flake8 mypy black tox pytest isort -e . && \
 	pre-commit install\
 	 --hook-type pre-push --hook-type pre-commit && \
 	{ mypy --install-types --non-interactive || echo "" ; } && \
@@ -75,7 +76,7 @@ requirements:
 # Run all tests
 test:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	if [[ "$$(python -V)" = "Python 3.8."* ]] ;\
+	if [[ "$$(python -V)" = "Python $(PYTHON_VERSION)."* ]] ;\
 	then tox -r -p -o ;\
 	else tox -r -e pytest ;\
 	fi

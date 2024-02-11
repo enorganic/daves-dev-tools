@@ -1,6 +1,6 @@
 black==24.1.1
 cachetools==5.3.2
-certifi==2023.11.17
+certifi==2024.2.2
 chardet==5.2.0
 charset-normalizer==3.3.2
 click==8.1.7
@@ -15,7 +15,7 @@ importlib-metadata
 importlib-resources
 iniconfig==2.0.0
 isort==5.13.2
-jaraco.classes==3.3.0
+jaraco.classes==3.3.1
 keyring==24.3.0
 markdown-it-py==3.0.0
 mccabe==0.7.0
@@ -27,7 +27,7 @@ nh3==0.2.15
 packaging==23.2
 pathspec==0.12.1
 pkginfo==1.9.6
-platformdirs==4.1.0
+platformdirs==4.2.0
 pluggy==1.4.0
 pycodestyle==2.11.1
 pyflakes==3.2.0
@@ -43,8 +43,8 @@ setuptools==69.0.3
 tomli-w==1.0.0
 tomli==2.0.1
 tox==4.12.1
-twine==4.0.2
+twine==5.0.0
 typing-extensions==4.9.0
-urllib3==2.1.0
+urllib3==2.2.0
 virtualenv==20.25.0
 zipp==3.17.0

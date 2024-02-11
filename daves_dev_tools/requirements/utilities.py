@@ -110,6 +110,7 @@ def _get_editable_finder_location(path_name: str) -> str:
                     if (
                         path.joinpath("setup.py").is_file()
                         or path.joinpath("setup.cfg").is_file()
+                        or path.joinpath("pyproject.toml").is_file()
                     ):
                         return str(path)
                     path = path.parent
@@ -363,8 +364,15 @@ def _iter_pyproject_toml_requirement_strings(path: str) -> Iterable[str]:
         if ("build-system" in pyproject) and (
             "requires" in pyproject["build-system"]
         ):
-            return pyproject["build-system"]["requires"]
-    return ()
+            yield from pyproject["build-system"]["requires"]
+        if ("project" in pyproject) and (
+            "dependencies" in pyproject["project"]
+        ):
+            yield from pyproject["project"]["dependencies"]
+        if "project.optional-dependencies" in pyproject:
+            values: Iterable[str]
+            for values in pyproject["project.optional-dependencies"].values():
+                yield from values
 
 
 def iter_configuration_file_requirement_strings(path: str) -> Iterable[str]:
@@ -470,22 +478,39 @@ def _get_setup_py_metadata(path: str, args: Tuple[str, ...]) -> str:
     return value
 
 
+def _get_pyproject_toml_project_metadata(path: str, key: str) -> str:
+    if os.path.basename(path).lower() != "pyproject.toml":
+        if not os.path.isdir(path):
+            path = os.path.dirname(path)
+        path = os.path.join(path, "pyproject.toml")
+    if os.path.isfile(path):
+        pyproject_io: IO[str]
+        with open(path) as pyproject_io:
+            pyproject: Dict[str, Any] = tomli.loads(pyproject_io.read())
+            if "project" in pyproject:
+                return pyproject["project"].get(key, "")
+    return ""
+
+
 def get_setup_distribution_name(path: str) -> str:
     """
-    Get a distribution's name from setup.py or setup.cfg
+    Get a distribution's name from setup.py, setup.cfg or pyproject.toml
     """
     return normalize_name(
         _get_setup_cfg_metadata(path, "name")
+        or _get_pyproject_toml_project_metadata(path, "name")
         or _get_setup_py_metadata(path, ("--name",))
     )
 
 
 def get_setup_distribution_version(path: str) -> str:
     """
-    Get a distribution's version from setup.py or setup.cfg
+    Get a distribution's version from setup.py, setup.cfg or pyproject.toml
     """
-    return _get_setup_cfg_metadata(path, "version") or _get_setup_py_metadata(
-        path, ("--version",)
+    return (
+        _get_setup_cfg_metadata(path, "version")
+        or _get_pyproject_toml_project_metadata(path, "version")
+        or _get_setup_py_metadata(path, ("--version",))
     )
 
 

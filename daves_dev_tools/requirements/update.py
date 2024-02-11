@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+from collections import deque
 from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from io import StringIO
@@ -311,23 +312,68 @@ def get_updated_pyproject_toml(
 
     - data (str): The contents of a **pyproject.toml** file
     - ignore ([str]): One or more project names to leave as-is
+
+    Returns:
+
+    The contents of the update pyproject.toml file.
     """
     ignore_set: Set[str] = _normalize_ignore_argument(ignore)
 
     def get_updated_requirement_string(requirement: str) -> str:
         return _get_updated_requirement_string(requirement, ignore=ignore_set)
 
-    # Parse
+    # Parse pyproject.toml
     pyproject: Dict[str, Any] = tomli.loads(data)
-    if ("build-system" in pyproject) and (
-        "requires" in pyproject["build-system"]
-    ):
+    build_system_requires: List[str] = pyproject.get("build-system", {}).get(
+        "requires", []
+    )
+    if build_system_requires:
+        # Update build dependency versions
         pyproject["build-system"]["requires"] = list(
             map(
                 get_updated_requirement_string,
-                pyproject["build-system"]["requires"],
+                build_system_requires,
             )
         )
+    project: Dict[str, Any] = pyproject.get("project", {})
+    project_dependencies: List[str] = project.get("dependencies", [])
+    if project_dependencies:
+        # Update project dependency versions
+        pyproject["project"]["dependencies"] = list(
+            map(
+                get_updated_requirement_string,
+                project_dependencies,
+            )
+        )
+    project_optional_dependencies: Dict[str, List[str]] = project.get(
+        "optional-dependencies", {}
+    )
+    if project_optional_dependencies:
+        # Update optional dependency versions
+        all_extra_requirements: List[str] = []
+        extra_name: str
+        extra_requirements: List[str]
+        for (
+            extra_name,
+            extra_requirements,
+        ) in project_optional_dependencies.items():
+            if extra_name == all_extra_name:
+                continue
+            extra_requirements = list(
+                map(get_updated_requirement_string, extra_requirements)
+            )
+            if all_extra_name:
+                all_extra_requirements += extra_requirements
+            project_optional_dependencies[extra_name] = extra_requirements
+        if all_extra_name:
+            project_optional_dependencies[all_extra_name] = list(
+                unique_everseen(all_extra_requirements)
+            )
+    if (
+        build_system_requires
+        or project_dependencies
+        or project_optional_dependencies
+    ):
         return tomli_w.dumps(pyproject)
     return data
 
@@ -385,7 +431,7 @@ def update(
     def update_(path: str) -> None:
         _update(path, ignore=ignore, all_extra_name=all_extra_name)
 
-    list(map(update_, paths))
+    deque(map(update_, paths), maxlen=0)
 
 
 def main() -> None:
@@ -414,8 +460,9 @@ def main() -> None:
         type=str,
         help=(
             "If provided, an extra which consolidates the requirements "
-            "for all other extras will be added/updated to *setup.cfg* (this "
-            "argument is ignored for *requirements.txt* files)"
+            "for all other extras will be added/updated to *setup.cfg* "
+            "or pyproject.toml (this argument is ignored for "
+            "*requirements.txt* files)"
         ),
     )
     parser.add_argument(

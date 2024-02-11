@@ -2,10 +2,9 @@ import functools
 import os
 import re
 import sys
-from distutils.core import run_setup
-from subprocess import check_output
+from subprocess import check_call, check_output, list2cmdline
 from time import time
-from typing import Any, Callable, FrozenSet, Iterable, List
+from typing import Any, Callable, FrozenSet, Iterable, List, Tuple
 
 from .utilities import run_module_as_main, sys_argv_pop
 
@@ -43,15 +42,23 @@ def _list_dist(
         return frozenset()
 
 
+def _run_setup(script_name: str, script_args: Tuple[str, ...] = ()) -> None:
+    """
+    This function replaces `distutils.core.run_setup`
+    """
+    command: Tuple[str, ...] = (sys.executable, script_name) + script_args
+    print(list2cmdline(command))
+    check_call(command)
+
+
 def _setup(directory: str) -> FrozenSet[str]:
     start_time: float = time()
     current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(directory)
     try:
         abs_setup: str = os.path.join(directory, "setup.py")
-        setup_args: List[str] = ["sdist", "bdist_wheel"]
-        print(f'{sys.executable} {abs_setup} {" ".join(setup_args)}')
-        run_setup(abs_setup, setup_args)
+        setup_args: Tuple[str, ...] = ("sdist", "bdist_wheel")
+        _run_setup(abs_setup, setup_args)
     finally:
         os.chdir(current_directory)
     return _list_dist(directory, modified_at_or_after=start_time)
@@ -108,7 +115,7 @@ def _cleanup(directory: str) -> None:
     current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(directory)
     try:
-        run_setup(os.path.join(directory, "setup.py"), ["clean", "--all"])
+        _run_setup(os.path.join(directory, "setup.py"), ("clean", "--all"))
     finally:
         os.chdir(current_directory)
 
