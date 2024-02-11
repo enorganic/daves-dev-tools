@@ -20,7 +20,11 @@ from .requirements.utilities import (
 )
 from .utilities import iter_parse_delimited_values, iter_sys_argv_pop, run
 
-_SETUP_NAMES: Set[str] = {"setup.cfg", "setup.py"}
+_PROJECT_ROOT_INDICATOR_FILE_NAMES: Set[str] = {
+    "setup.cfg",
+    "setup.py",
+    "pyproject.toml",
+}
 EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS: Tuple[str, ...] = (
     r"^[.~].*$",
     r"^venv$",
@@ -76,7 +80,12 @@ def _iter_find_distributions(
 
         sub_directories = list(map(get_subdirectory_path, sub_directories))
         # Check to see if this is a project directory
-        if any(map(_SETUP_NAMES.__contains__, map(str.lower, files))):
+        if any(
+            map(
+                _PROJECT_ROOT_INDICATOR_FILE_NAMES.__contains__,
+                map(str.lower, files),
+            )
+        ):
             name: str = get_setup_distribution_name(directory)
             if name in distribution_names:
                 return (
