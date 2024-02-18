@@ -4,14 +4,15 @@ from pathlib import Path
 from typing import Iterable
 
 import tomli
+from packaging.requirements import Requirement
+from packaging.specifiers import Specifier
+from packaging.version import Version
+
 from daves_dev_tools.requirements.update import (
     get_updated_pyproject_toml,
     get_updated_requirements_txt,
     get_updated_setup_cfg,
 )
-from packaging.requirements import Requirement
-from packaging.specifiers import Specifier
-from packaging.version import Version
 
 TEST_PROJECT_A: Path = (
     Path(__file__).absolute().parent.joinpath("test_projects/test_project_a/")

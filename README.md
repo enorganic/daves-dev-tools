@@ -20,8 +20,8 @@ pip3 install daves-dev-tools
 
 ### Command Line Interface
 
-```text
-$ daves-dev-tools % daves-dev-tools -h
+```console
+$ daves-dev-tools -h
 Usage:
   daves-dev-tools <command> [options]
 
@@ -45,91 +45,25 @@ Commands:
 
 #### daves-dev-tools requirements update
 
-Example:
-
-```shell script
-daves-dev-tools requirements update -aen all setup.cfg pyproject.toml tox.ini
-```
-
-The above command will update version specifiers for
-all package requirements in your setup.cfg, pyproject.toml, and tox.ini files
-to match currently installed versions of each distribution (matching existing
-granularity, and only for *inclusive* specifiers—so where the comparator is
-"~=", "==", ">=", or "<="—but not ">", "<", or "!=").
-
-Help:
-
-```text
-$ daves-dev-tools requirements update -h
-usage: daves-dev-tools requirements update [-h] [-i IGNORE]
-                                           [-aen ALL_EXTRA_NAME] [-v]
-                                           path [path ...]
-
-positional arguments:
-  path                  One or more local paths to a *setup.cfg* and/or
-                        *requirements.txt* file
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i IGNORE, --ignore IGNORE
-                        A comma-separated list of distributions to ignore
-                        (leave any requirements pertaining to the package as-
-                        is)
-  -aen ALL_EXTRA_NAME, --all-extra-name ALL_EXTRA_NAME
-                        If provided, an extra which consolidates the
-                        requirements for all other extras will be
-                        added/updated to *setup.cfg* (this argument is ignored
-                        for *requirements.txt* files)
-  -v, --verbose         Echo more verbose output
-```
+See the documentation for
+[dependence update](https://github.com/enorganic/dependence#dependence-update).
+This command is now part of the `dependence` distribution/project.
+`daves-dev-tools` wraps `dependence` for backwards compatibility,
+however future major versions of `daves-dev-tools` may drop this command,
+since it is now redundant.
 
 #### daves-dev-tools requirements freeze
 
-```text
-$ daves-dev-tools requirements freeze -h
-usage: daves-dev-tools requirements freeze [-h] [-e EXCLUDE]
-                                           [-er EXCLUDE_RECURSIVE]
-                                           [-nv NO_VERSION]
-                                           requirement [requirement ...]
-
-This command prints dependencies inferred from an installed distribution or
-project, in a similar format to the output of `pip freeze`, except that all
-generated requirements are specified in the format "distribution-name==0.0.0"
-(including for editable installations). Using this command instead of `pip
-freeze` to generate requirement files ensures that you don't bloat your
-requirements files with superfluous distributions.
-
-positional arguments:
-  requirement           One or more requirement specifiers (for example:
-                        "requirement-name", "requirement-
-                        name[extra-a,extra-b]", ".[extra-a, extra-b]" or
-                        "../other-editable-package-directory[extra-a,
-                        extra-b]) and/or paths to a setup.py, setup.cfg,
-                        pyproject.toml, tox.ini or requirements.txt file
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -e EXCLUDE, --exclude EXCLUDE
-                        A distribution (or comma-separated list of
-                        distributions) to exclude from the output
-  -er EXCLUDE_RECURSIVE, --exclude-recursive EXCLUDE_RECURSIVE
-                        A distribution (or comma-separated list of
-                        distributions) to exclude from the output. Unlike -e /
-                        --exclude, this argument also precludes recursive
-                        requirement discovery for the specified packages,
-                        thereby excluding all of the excluded package's
-                        requirements which are not required by another (non-
-                        excluded) distribution.
-  -nv NO_VERSION, --no-version NO_VERSION
-                        Don't include versions (only output distribution
-                        names) for packages matching this glob pattern (note:
-                        the value must be single-quoted if it contain
-                        wildcards)
-```
+See the documentation for
+[dependence freeze](https://github.com/enorganic/dependence#dependence-update).
+This command is now part of the `dependence` distribution/project.
+`daves-dev-tools` wraps `dependence` for backwards compatibility,
+however future major versions of `daves-dev-tools` may drop this command,
+since it is now redundant.
 
 #### daves-dev-tools install-editable
 
-```text
+```console
 $ daves-dev-tools install-editable -h
 usage: daves-dev-tools install-editable [-h] [-r REQUIREMENT] [-d DIRECTORY]
                                         [-e EXCLUDE] [-ed EXCLUDE_DIRECTORY]
@@ -182,7 +116,7 @@ optional arguments:
 
 #### daves-dev-tools make-typed
 
-```text
+```console
 $ daves-dev-tools make-typed -h
 usage: daves-dev-tools make-typed [-h] path
 
@@ -197,7 +131,7 @@ optional arguments:
 
 #### daves-dev-tools uninstall-all
 
-```text
+```console
 $ daves-dev-tools uninstall-all -h
 usage: daves-dev-tools uninstall-all [-h] [-e EXCLUDE] [-dr]
 
@@ -216,7 +150,7 @@ optional arguments:
 
 #### daves-dev-tools git download
 
-```text
+```console
 $ daves-dev-tools git download -h
 usage: daves-dev-tools git download [-h] [-b BRANCH] [-d DIRECTORY] [-e]
                                     repo [file [file ...]]
@@ -244,7 +178,7 @@ optional arguments:
 
 #### daves-dev-tools git tag-version
 
-```text
+```console
 $ daves-dev-tools git tag-version -h
 usage: daves-dev-tools git tag-version [-h] [-m MESSAGE] [directory]
 
@@ -264,7 +198,7 @@ optional arguments:
 
 #### daves-dev-tools clean
 
-```text
+```console
 $ daves-dev-tools clean -h
 usage: daves-dev-tools clean [-h] [-e EXCLUDE] [-dr] [directory]
 
@@ -286,7 +220,7 @@ optional arguments:
 
 #### daves-dev-tools distribute
 
-```text
+```console
 $ daves-dev-tools distribute -h
 usage: daves-dev-tools distribute [-h]
                     [-r REPOSITORY] [--repository-url REPOSITORY_URL]
