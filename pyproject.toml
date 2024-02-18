@@ -16,7 +16,7 @@ target-version = [
 [tool.isort]
 profile = "black"
 src_paths = [
-    "oapi",
+    "daves_dev_tools",
     "tests",
     "scripts",
     "setup.py",

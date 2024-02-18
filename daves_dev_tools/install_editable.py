@@ -3,12 +3,14 @@ import os
 import re
 import sys
 from glob import glob
+from importlib.metadata import Distribution
+from importlib.metadata import distribution as _get_distribution
 from itertools import chain
 from pipes import quote
 from subprocess import list2cmdline
 from typing import Iterable, List, Pattern, Sequence, Set, Tuple
 
-import pkg_resources
+from packaging.requirements import Requirement
 
 from .requirements.utilities import (
     get_distribution,
@@ -32,16 +34,44 @@ EXCLUDE_DIRECTORY_REGULAR_EXPRESSIONS: Tuple[str, ...] = (
 )
 
 
+def _iter_distribution_extras(
+    distribution: Distribution,
+) -> Iterable[str]:
+    if not distribution.requires:
+        return
+    extras: Set[str] = set()
+    requirement: Requirement
+    for requirement in map(Requirement, distribution.requires):
+        if requirement.marker is not None:
+            requirement_marker: str
+            for requirement_marker in map(
+                str.strip, str(requirement.marker).split(";")
+            ):
+                variable: str
+                operation: str
+                value: str
+                variable, operation, value = re.split(
+                    r"([~<=>\s]+)",
+                    requirement_marker,
+                    maxsplit=1,
+                )
+                if variable == "extra":
+                    if value not in extras:
+                        yield value
+                    extras.add(value)
+
+
 def _get_requirement_string(
     name: str, directory: str, include_extras: bool
 ) -> str:
     requirement_string: str = os.path.abspath(directory)
     if is_installed(name) and include_extras:
-        distribution: pkg_resources.Distribution = get_distribution(name)
-        if distribution.extras:
-            requirement_string = (
-                f"{requirement_string}[{','.join(distribution.extras)}]"
-            )
+        distribution: Distribution = get_distribution(name)
+        extras: Tuple[str, ...] = tuple(
+            _iter_distribution_extras(distribution)
+        )
+        if extras:
+            requirement_string = f"{requirement_string}[{','.join(extras)}]"
     return requirement_string
 
 
@@ -107,7 +137,7 @@ def _iter_find_distributions(
 def _get_distribution_major_version(name: str) -> int:
     version: str = ""
     try:
-        version = pkg_resources.get_distribution(name).version
+        version = _get_distribution(name).version
     except Exception:
         try:
             version = get_distribution(name).version

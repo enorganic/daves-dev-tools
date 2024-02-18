@@ -6,9 +6,7 @@ install:
 	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
-	pip install -c requirements.txt pre-commit flake8 mypy black tox pytest -e . && \
-	pre-commit install\
-	 --hook-type pre-push --hook-type pre-commit && \
+	pip install -c requirements.txt flake8 mypy black tox pytest -e . && \
 	{ mypy --install-types --non-interactive || echo "" ; } && \
 	echo "Installation complete"
 
@@ -24,9 +22,7 @@ reinstall:
 	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
-	pip install pre-commit flake8 mypy black tox pytest isort -e . && \
-	pre-commit install\
-	 --hook-type pre-push --hook-type pre-commit && \
+	pip install flake8 mypy black tox pytest isort -e . && \
 	{ mypy --install-types --non-interactive || echo "" ; } && \
 	make requirements && \
 	echo "Installation complete"
@@ -42,7 +38,6 @@ clean:
 	 -e .\
      -e pyproject.toml\
      -e tox.ini\
-	 -e pre-commit\
      -e requirements.txt && \
 	daves-dev-tools clean
 
@@ -52,8 +47,6 @@ distribute:
 
 upgrade:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	pip install --upgrade pre-commit && \
-	pre-commit autoupdate && \
 	daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini \
 	 > .requirements.txt && \
