@@ -2,32 +2,35 @@ import functools
 import os
 import re
 import sys
-from subprocess import check_call, check_output, list2cmdline
+import tempfile
+from subprocess import check_output
 from time import time
 from typing import Any, Callable, FrozenSet, Iterable, List, Tuple
+
+from setuptools import build_meta  # type: ignore
 
 from .utilities import run_module_as_main, sys_argv_pop
 
 lru_cache: Callable[..., Any] = functools.lru_cache
+_SYS_ARGV: Tuple[str, ...] = tuple(sys.argv)
 
 
-def _list_dist(
+def _list_modified(
     directory: str, modified_at_or_after: float = 0.0
 ) -> FrozenSet[str]:
-    dist_root: str = os.path.join(directory, "dist")
     dist_file: str
     dist_sub_directories: List[str]
     dist_files: Iterable[str]
     try:
-        dist_root, dist_sub_directories, dist_files = next(
-            iter(os.walk(dist_root))
+        directory, dist_sub_directories, dist_files = next(
+            iter(os.walk(directory))
         )
     except StopIteration:
         raise FileNotFoundError(
-            f"No distributions could be found in {dist_root}"
+            f"No distributions could be found in {directory}"
         )
-    dist_files = (
-        os.path.join(dist_root, dist_file) for dist_file in dist_files
+    dist_files = tuple(
+        os.path.join(directory, dist_file) for dist_file in dist_files
     )
     if modified_at_or_after:
         dist_files = filter(
@@ -42,26 +45,21 @@ def _list_dist(
         return frozenset()
 
 
-def _run_setup(script_name: str, script_args: Tuple[str, ...] = ()) -> None:
-    """
-    This function replaces `distutils.core.run_setup`
-    """
-    command: Tuple[str, ...] = (sys.executable, script_name) + script_args
-    print(list2cmdline(command))
-    check_call(command)
-
-
 def _setup(directory: str) -> FrozenSet[str]:
     start_time: float = time()
     current_directory: str = os.path.abspath(os.path.curdir)
     os.chdir(directory)
     try:
-        abs_setup: str = os.path.join(directory, "setup.py")
-        setup_args: Tuple[str, ...] = ("sdist", "bdist_wheel")
-        _run_setup(abs_setup, setup_args)
+        metadata_directory: str = tempfile.mkdtemp()
+        dist_directory: str = tempfile.mkdtemp()
+        build_meta.build_sdist(dist_directory)
+        build_meta.prepare_metadata_for_build_wheel(metadata_directory)
+        build_meta.build_wheel(
+            dist_directory, metadata_directory=metadata_directory
+        )
     finally:
         os.chdir(current_directory)
-    return _list_dist(directory, modified_at_or_after=start_time)
+    return _list_modified(dist_directory, modified_at_or_after=start_time)
 
 
 def _get_help() -> bool:
@@ -70,7 +68,7 @@ def _get_help() -> bool:
     retrieve the repository credentials and store them in the "TWINE_USERNAME"
     and "TWINE_PASSWORD" environment variables.
     """
-    if set(sys.argv) & {"-h", "--help", "-H", "--HELP"}:
+    if set(_SYS_ARGV) & {"-h", "--help", "-H", "--HELP"}:
         help_: str = check_output(
             (sys.executable, "-m", "twine", "upload", "-h"),
             encoding="utf-8",
@@ -103,31 +101,22 @@ def _get_help() -> bool:
 def _dist(
     directory: str, distributions: FrozenSet[str], echo: bool = True
 ) -> None:
+    arguments: Tuple[str, ...] = (
+        ("upload",) + tuple(_SYS_ARGV[1:]) + tuple(sorted(distributions))
+    )
     run_module_as_main(
         "twine",
-        arguments=(["upload"] + sys.argv[1:] + list(sorted(distributions))),
+        arguments=arguments,
         directory=directory,
         echo=False,
     )
-
-
-def _cleanup(directory: str) -> None:
-    current_directory: str = os.path.abspath(os.path.curdir)
-    os.chdir(directory)
-    try:
-        _run_setup(os.path.join(directory, "setup.py"), ("clean", "--all"))
-    finally:
-        os.chdir(current_directory)
 
 
 def main() -> None:
     if not _get_help():
         directory: str = sys_argv_pop(depth=2, default=".")  # type: ignore
         directory = os.path.abspath(directory).rstrip("/")
-        try:
-            _dist(directory, _setup(directory))
-        finally:
-            _cleanup(directory)
+        _dist(directory, _setup(directory))
 
 
 if __name__ == "__main__":
