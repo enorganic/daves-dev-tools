@@ -101,7 +101,7 @@ def main() -> None:
         "--branch",
         default="",
         type=str,
-        help=("Retrieve files from BRANCH instead of the remote's HEAD"),
+        help="Retrieve files from BRANCH instead of the remote's HEAD",
     )
     parser.add_argument(
         "-d",
