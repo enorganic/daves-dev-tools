@@ -40,12 +40,12 @@ requests-toolbelt==1.0.0
 requests==2.32.3
 rfc3986==2.0.0
 rich==13.9.2
-setuptools==75.1.0
+setuptools==75.2.0
 tomli==2.0.2
 tomli_w==1.0.0
-tox==4.22.0
+tox==4.23.0
 twine==5.1.1
 typing_extensions==4.12.2
 urllib3==2.2.3
-virtualenv==20.26.6
+virtualenv==20.27.0
 zipp==3.20.2

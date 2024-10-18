@@ -53,9 +53,12 @@ def _setup(directory: str) -> FrozenSet[str]:
         metadata_directory: str = tempfile.mkdtemp()
         dist_directory: str = tempfile.mkdtemp()
         build_meta.build_sdist(dist_directory)
-        build_meta.prepare_metadata_for_build_wheel(metadata_directory)
+        dist_info: str = build_meta.prepare_metadata_for_build_wheel(
+            metadata_directory
+        )
         build_meta.build_wheel(
-            dist_directory, metadata_directory=metadata_directory
+            dist_directory,
+            metadata_directory=os.path.join(metadata_directory, dist_info),
         )
     finally:
         os.chdir(current_directory)
